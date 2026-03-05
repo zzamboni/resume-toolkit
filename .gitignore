@@ -1,4 +1,3 @@
-jsonresume-theme-even
 *.dvi
 *.log
 *.out
@@ -25,7 +24,6 @@ auto
 .DS_Store
 .auctex-auto
 node_modules/
-themes/
 build/zamboni-jsonresume/dev/
 brilliant-cv/
 pubs-src/zamboni-pubs.pdf
