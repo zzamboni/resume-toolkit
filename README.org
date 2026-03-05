@@ -151,7 +151,8 @@ The wrapper runs:
 - pipeline script =scripts/run_pipeline.sh=
 - supporting converters in =scripts/=
 
-The repository includes =themes/jsonresume-theme-even= as a git submodule.
+The container uses a customized version of =themes/jsonresume-theme-even= as a git submodule, cloned from https://github.com/zzamboni/jsonresume-theme-even/tree/feat-multiple-features.
+
 Clone with submodules enabled:
 
 #+begin_src sh
