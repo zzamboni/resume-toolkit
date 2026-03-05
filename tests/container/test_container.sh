@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="${1:-${VITA_PIPELINE_IMAGE:-zzamboni/vita-pipeline:latest}}"
+IMAGE="${1:-${VITA_PIPELINE_IMAGE:-zzamboni/resume-toolkit:latest}}"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 FIXTURES_DIR="$ROOT_DIR/tests/container/fixtures"
 TMP_DIR="$(mktemp -d)"

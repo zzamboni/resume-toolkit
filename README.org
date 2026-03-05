@@ -114,7 +114,7 @@ You can also call container entrypoint commands directly, for example:
 
 * Environment Variables
 
-- =VITA_PIPELINE_IMAGE=: Docker image (default: =zzamboni/vita-pipeline:latest=)
+- =VITA_PIPELINE_IMAGE=: Docker image (default: =zzamboni/resume-toolkit:latest=)
 - =VITA_SERVE_PORT=: serve port (default: =8080=)
 - =VITA_PIPELINE_CACHE_DIR=: host cache dir for container caches
 - =LOGODEV_TOKEN=: token used by =fetch-logos=

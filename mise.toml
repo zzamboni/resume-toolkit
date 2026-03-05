@@ -13,7 +13,7 @@ disable_tools = ["yarn"]
 _.python.venv = { path = ".venv", create = true, uv_create_args = ["--seed"] }
 
 [vars]
-pipeline_docker_image = "zzamboni/vita-pipeline:latest"
+pipeline_docker_image = "zzamboni/resume-toolkit:latest"
 port = "8008"
 
 # -----------------------------------------------------------------------------
@@ -181,13 +181,19 @@ set -euo pipefail
 
 uv pip sync requirements.txt
 
-if [ -f package-lock.json ]; then npm ci; else npm install; fi
+# Build the local theme first so the root `file:` dependency includes dist/.
+(
+  cd themes/jsonresume-theme-even
+  if [ -f package-lock.json ]; then
+    npm ci --ignore-scripts
+  else
+    npm install --ignore-scripts
+  fi
+  # Force-enable scripts here so prebuild generates schema.d.ts.
+  NPM_CONFIG_IGNORE_SCRIPTS=false npm run build
+)
 
-if [ -f themes/jsonresume-theme-even/package-lock.json ]; then
-  (cd themes/jsonresume-theme-even && npm ci)
-else
-  (cd themes/jsonresume-theme-even && npm install)
-fi
+if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
 '''
 
 [tasks.pipeline-devcontainer]

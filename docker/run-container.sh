@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE_NAME="${VITA_PIPELINE_IMAGE:-zzamboni/vita-pipeline:latest}"
+IMAGE_NAME="${VITA_PIPELINE_IMAGE:-zzamboni/resume-toolkit:latest}"
 CACHE_DIR="${VITA_PIPELINE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vita-pipeline}"
 PORT_ARG=""
 if [[ -n "${VITA_PIPELINE_PORT_MAP:-}" ]]; then
