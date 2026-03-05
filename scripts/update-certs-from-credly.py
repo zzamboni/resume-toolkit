@@ -227,8 +227,8 @@ def is_credly_certificate_entry(cert: Dict[str, Any]) -> bool:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("username", help="Credly username (e.g., diego-zamboni)")
-    ap.add_argument("jsonresume", help="Path to JSONResume file (e.g., diego-zamboni-jsonresume.json)")
+    ap.add_argument("username", help="Credly username")
+    ap.add_argument("jsonresume", help="Path to JSONResume file")
     ap.add_argument("--output", help="Write to a different file instead of overwriting")
     ap.add_argument("--include-non-cert-badges", action="store_true",
                     help="Include all badges, even if not classified as certifications")

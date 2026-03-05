@@ -22,10 +22,10 @@ Usage:
   build-resume.sh <subcommand> [args...] (use 'build-resume.sh tasks' to see list)
 
 Examples:
-  build-resume.sh zamboni-vita.json pubs-src/zamboni-pubs.bib --watch --serve
-  build-resume.sh fetch-logos zamboni-vita.json --overwrite
-  build-resume.sh update-certs zzamboni zamboni-vita.json
-  build-resume.sh update-pub-numbers zamboni-vita.json
+  build-resume.sh resume.json pubs.bib --watch --serve
+  build-resume.sh fetch-logos resume.json --overwrite
+  build-resume.sh update-certs zzamboni resume.json
+  build-resume.sh update-pub-numbers resume.json
   build-resume.sh tasks
 USAGE
 }
