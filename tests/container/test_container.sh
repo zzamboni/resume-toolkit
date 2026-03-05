@@ -31,14 +31,20 @@ assert_file() {
 assert_contains() {
   local path="$1"
   local pattern="$2"
-  rg -q "$pattern" "$path" || {
-    echo "error: expected pattern '$pattern' not found in $path" >&2
-    exit 1
-  }
+  if command -v rg >/dev/null 2>&1; then
+    rg -q "$pattern" "$path" || {
+      echo "error: expected pattern '$pattern' not found in $path" >&2
+      exit 1
+    }
+  else
+    grep -Eq "$pattern" "$path" || {
+      echo "error: expected pattern '$pattern' not found in $path" >&2
+      exit 1
+    }
+  fi
 }
 
 require_cmd docker
-require_cmd rg
 require_cmd bash
 
 mkdir -p "$CACHE_DIR" "$WORK_DIR/fixtures"
@@ -54,9 +60,9 @@ run_wrapper() {
 
 echo "==> Test 1: task listing"
 run_wrapper tasks >"$TMP_DIR/tasks.out"
-assert_contains "$TMP_DIR/tasks.out" "^build\\b"
-assert_contains "$TMP_DIR/tasks.out" "^fetch-logos\\b"
-assert_contains "$TMP_DIR/tasks.out" "^update-certs\\b"
+assert_contains "$TMP_DIR/tasks.out" "^build($|[[:space:]])"
+assert_contains "$TMP_DIR/tasks.out" "^fetch-logos($|[[:space:]])"
+assert_contains "$TMP_DIR/tasks.out" "^update-certs($|[[:space:]])"
 
 echo "==> Test 2: pipeline build with publications"
 run_wrapper build fixtures/resume.json fixtures/publications.bib --out build/out >/dev/null
