@@ -151,6 +151,19 @@ The wrapper runs:
 - pipeline script =scripts/run_pipeline.sh=
 - supporting converters in =scripts/=
 
+The repository includes =themes/jsonresume-theme-even= as a git submodule.
+Clone with submodules enabled:
+
+#+begin_src sh
+git clone --recurse-submodules https://github.com/zzamboni/resume-toolkit.git
+#+end_src
+
+If you already cloned without submodules:
+
+#+begin_src sh
+git submodule update --init --recursive
+#+end_src
+
 The `mise` tasks are intentionally minimal and user-facing:
 - =build=
 - =fetch-logos=
