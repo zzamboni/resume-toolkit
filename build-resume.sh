@@ -91,6 +91,7 @@ exec docker run --rm $IT_ARG \
   -v "$PWD":/work \
   -v "$CACHE_DIR":/opt/vita-cache \
   -w /work \
+  -e HOME=/tmp \
   -e VITA_WORKDIR=/work \
   -e VITA_SERVE_PORT="$PORT" \
   -e MISE_IDIOMATIC_VERSION_FILE=false \
