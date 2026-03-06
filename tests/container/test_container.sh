@@ -54,6 +54,7 @@ cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 run_wrapper() {
   (
     cd "$WORK_DIR"
+    export VITA_PIPELINE_IMAGE="$IMAGE"
     "$ROOT_DIR/build-resume.sh" --no-it "$@"
   )
 }
