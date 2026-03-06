@@ -1,7 +1,7 @@
 # Resume Toolkit - JSONresume/BibTeX to HTML/PDF
 
-- [Quick Start](#org90b52ae)
 - [Requirements](#orge0cfd3e)
+- [Quick Start](#org90b52ae)
 - [Output Layout](#org1334766)
 - [Main Commands](#org8964c26)
   - [`build` (default)](#org6cb0f47)
@@ -10,8 +10,10 @@
   - [`update-pub-numbers`](#orgeb8b253)
   - [Other passthrough subcommands](#org23204b4)
 - [Environment Variables](#orgc2ef02d)
-- [Automated Tests](#org487a931)
 - [Under the Hood](#org79da12a)
+  - [Automated Tests](#org487a931)
+
+---
 
 This project provides a reusable build pipeline for generating:
 
@@ -23,6 +25,25 @@ This project provides a reusable build pipeline for generating:
 
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a Docker image.
 
+
+<a id="orge0cfd3e"></a>
+
+## Requirements and installation
+
+-   Docker
+-   A file in [JSON Resume](https://jsonresume.org/) format
+-   Optional BibTeX file(s) for publications
+
+If no BibTeX files are provided, the publications output is skipped.
+
+To install, download the [build-resume.sh](https://github.com/zzamboni/resume-toolkit/blob/main/build-resume.sh) script and make it executable:
+
+``` sh
+wget https://raw.githubusercontent.com/zzamboni/resume-toolkit/refs/heads/main/build-resume.sh
+chmod a+rx build-resume.sh
+```
+
+The first time the script runs, it will download the Docker image automatically.
 
 <a id="org90b52ae"></a>
 
@@ -43,17 +64,6 @@ Build, watch changes, and serve output:
 Then open:
 
 -   `http://localhost:8080`
-
-
-<a id="orge0cfd3e"></a>
-
-## Requirements
-
--   Docker
--   A JSON Resume file
--   Optional BibTeX file(s) for publications
-
-If no BibTeX files are provided, the publications output is skipped.
 
 
 <a id="org1334766"></a>
@@ -102,7 +112,9 @@ Options:
 
 ### `fetch-logos`
 
-Download company/institution logos from the resume file into `assets/logos/` in your working directory. Once these files are available, the `build` step will include them automatically in the generated PDF. You can also provide/update the images by hand with the appropriate name.
+Download company/institution logos from the resume file into `assets/logos/` in your working directory. Uses [logo.dev](https://www.logo.dev/) to fetch logos. You need to create an API key and provide the publishable key in the `LOGODEV_TOKEN` environment variable, or using the `--token` flag.
+
+If matching logo files are found under `assets/logos/`, the `build` step will include them automatically in the generated PDF. You can also provide/update the images by hand with the appropriate name.
 
 ```sh
 ./build-resume.sh fetch-logos resume.json --overwrite
@@ -129,7 +141,7 @@ Options:
 
 -   `--include-expired`
 -   `--include-non-cert-badges`
--   `--sort <date_desc|date_asc|name>`
+-   `--sort <date_desc|date_asc|name>` (default `date_desc`)
 
 
 <a id="orgeb8b253"></a>
@@ -171,35 +183,6 @@ You can also call container entrypoint commands directly, for example:
 -   `LOGODEV_TOKEN`: token used by `fetch-logos`
 
 
-<a id="org487a931"></a>
-
-## Automated Tests
-
-Container integration tests live under `tests/container/` and validate:
-
--   exposed task list
--   end-to-end build outputs
--   logo-fetch command wiring
-
-Run tests:
-
-```sh
-tests/container/test_container.sh
-```
-
-Optionally test a specific image:
-
-```sh
-tests/container/test_container.sh myorg/vita-pipeline:latest
-```
-
-Or via mise:
-
-```sh
-mise run test-container
-```
-
-
 <a id="org79da12a"></a>
 
 ## Under the Hood
@@ -229,3 +212,31 @@ The \`mise\` tasks are intentionally minimal and user-facing:
 -   `build`
 -   `fetch-logos`
 -   `update-certs`
+
+<a id="org487a931"></a>
+
+### Automated Tests
+
+Container integration tests live under `tests/container/` and validate:
+
+-   exposed task list
+-   end-to-end build outputs
+-   logo-fetch command wiring
+
+Run tests:
+
+```sh
+tests/container/test_container.sh
+```
+
+Optionally test a specific image:
+
+```sh
+tests/container/test_container.sh myorg/vita-pipeline:latest
+```
+
+Or via mise:
+
+```sh
+mise run test-container
+```
