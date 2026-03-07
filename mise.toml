@@ -232,7 +232,7 @@ fi
 
 echo docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
-mise test-container
+mise test-toolkit
 '''
 
 [tasks.docker-shell]
@@ -286,8 +286,8 @@ else
 fi
 '''
 
-[tasks.test-container]
-description = "Run container integration tests"
+[tasks.test-toolkit]
+description = "Run toolkit integration tests"
 hide = true
 usage = '''
 arg "[image]" help="Docker image to test" default="{{vars.pipeline_docker_image}}"

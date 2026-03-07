@@ -412,7 +412,7 @@ docker-shell          Open an interactive shell in the Docker image
 fetch-logos           Fetch company/education logos from JSON resume into /work assets
 pipeline-docker       Run pipeline through standalone Docker image
 pipeline-image-build  Build standalone pipeline Docker image
-test-container        Run container integration tests
+test-toolkit          Run toolkit integration tests
 update-certs          Update certificates from credly
 update-pub-numbers    Update publication reference numbers in JSON resume
 ```
@@ -421,26 +421,10 @@ update-pub-numbers    Update publication reference numbers in JSON resume
 
 ### Automated Tests
 
-Container integration tests live under `tests/container/` and validate:
-
--   exposed task list
--   end-to-end build outputs
--   logo-fetch command wiring
+Container integration tests live under `tests/container/`.
 
 Run tests:
 
 ```sh
-tests/container/test_container.sh
-```
-
-Optionally test a specific image:
-
-```sh
-tests/container/test_container.sh myorg/vita-pipeline:latest
-```
-
-Or via mise:
-
-```sh
-mise run test-container
+mise test-toolkit
 ```

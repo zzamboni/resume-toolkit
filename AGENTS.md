@@ -37,7 +37,7 @@
 - Automated container integration tests are provided in `tests/container/test_container.sh`.
 - Run tests with:
   - `tests/container/test_container.sh`
-  - or `mise run test-container`
+  - or `mise run test-toolkit`
 - The suite runs through `build-resume.sh` and currently validates:
   - exposed task list
   - end-to-end pipeline build outputs
