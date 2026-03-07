@@ -115,12 +115,42 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
     "name": "Full list online",
     "url": "/vita/publications/",
     "authors": ["Diego Zamboni"],
-    "bibfiles": ["zamboni-pubs.bib", "zamboni-patents.bib"]
+    "bibfiles": ["pubs.bib", "patents.bib"]
   }
 ]
 ```
 
 `bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
+
+If one publication entry has `"inline_in_pdf"`, the resume PDF embeds the aggregated publications list directly using Typst's `#cv-publication(...)` support. HTML publications generation is unchanged.
+
+-   If `"inline_in_pdf": true`, defaults are used:
+    -   `ref-style: "ieee"`
+    -   `ref-full: true`
+    -   `key-list: []`
+-   You can also pass a dictionary, and its keys/values are forwarded to `bibliography(...)`, for example:
+
+```json
+"inline_in_pdf": {
+  "ref-style": "ieee",
+  "ref-full": true,
+  "key-list": []
+}
+```
+
+```json
+"publications": [
+  {
+    "name": "Full list online",
+    "url": "/vita/publications/",
+    "authors": ["Diego Zamboni"],
+    "bibfiles": ["pubs.bib"],
+    "inline_in_pdf": true
+  }
+]
+```
+
+Note: inlining entries only works in the PDF output for now. It's recommended to leave a "link entry" like the above so that the HTML output links to the separate publications page.
 
 
 <a id="orgd64b9f2"></a>

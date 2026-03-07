@@ -676,7 +676,49 @@ def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer") 
     return output
 
 
-def render_publications(publications: List[Dict[str, Any]], label: str = "Publications") -> str:
+INLINE_PUBLICATIONS_DEFAULTS: Dict[str, Any] = {
+    "ref-style": "ieee",
+    "ref-full": True,
+    "key-list": [],
+}
+
+
+def get_inline_publications_config(publications: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Return inline bibliography config if enabled in publications."""
+    for pub in publications:
+        if not isinstance(pub, dict):
+            continue
+        inline = pub.get("inline_in_pdf")
+        if inline is True:
+            return dict(INLINE_PUBLICATIONS_DEFAULTS)
+        if isinstance(inline, dict):
+            return dict(inline)
+    return None
+
+
+def to_typst_value(value: Any) -> str:
+    """Serialize a Python value into a Typst literal."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "none"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, list):
+        if len(value)>0:
+            # The trailing comma before the closing parenthesis is to avoid
+            # single-element string lists being converted to a list of characters.
+            return "(" + ", ".join(to_typst_value(v) for v in value) + ",)"
+        else:
+            return "()"
+    return f'"{escape_typst(str(value))}"'
+
+
+def render_publications(
+    publications: List[Dict[str, Any]],
+    label: str = "Publications",
+    inline_bib_path: Optional[str] = None,
+) -> str:
     """Render publications using brilliant-cv."""
     if not publications:
         return ""
@@ -685,6 +727,14 @@ def render_publications(publications: List[Dict[str, Any]], label: str = "Public
         f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
         f'letters: {HIGHLIGHTED_LETTERS})\n\n'
     )
+
+    inline_cfg = get_inline_publications_config(publications)
+    if inline_bib_path and inline_cfg is not None:
+        cv_publication_args = [f'bib: bibliography("{escape_typst(inline_bib_path)}")']
+        for key, value in inline_cfg.items():
+            cv_publication_args.append(f"{key}: {to_typst_value(value)}")
+        output += f'#cv-publication({", ".join(cv_publication_args)})\n\n'
+        return output
 
     for pub in publications:
         name = pub.get("name", "")
@@ -774,7 +824,7 @@ def render_references(references: List[Dict[str, Any]], label: str = "References
 
 
 def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_dir: Path,
-                    source_assets_dir: Path) -> str:
+                    source_assets_dir: Path, inline_publications_bib: Optional[str] = None) -> str:
     """Render resume sections in the desired order."""
     theme_options = get_theme_options(resume_data)
     sections = theme_options.get("sections")
@@ -862,6 +912,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
             output += render_publications(
                 resume_data.get("publications", []),
                 label=label_for("publications", "Publications"),
+                inline_bib_path=inline_publications_bib,
             )
             continue
         if section == "skills":
@@ -879,8 +930,13 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
 
     return output
 
-def generate_typst_cv(resume_data: Dict[str, Any], base_output_dir: Path, assets_dir: Path,
-                      source_assets_dir: Path) -> str:
+def generate_typst_cv(
+    resume_data: Dict[str, Any],
+    base_output_dir: Path,
+    assets_dir: Path,
+    source_assets_dir: Path,
+    inline_publications_bib: Optional[str] = None,
+) -> str:
     """Generate Typst CV using brilliant-cv template."""
 
     basics = resume_data.get("basics", {})
@@ -991,7 +1047,13 @@ def generate_typst_cv(resume_data: Dict[str, Any], base_output_dir: Path, assets
 
     # Add content sections
     output += render_summary(basics)
-    output += render_sections(resume_data, base_output_dir, assets_dir, source_assets_dir)
+    output += render_sections(
+        resume_data,
+        base_output_dir,
+        assets_dir,
+        source_assets_dir,
+        inline_publications_bib=inline_publications_bib,
+    )
 
     return output
 
@@ -1014,6 +1076,7 @@ def main():
 
     assets_dir = Path("assets")
     source_assets_dir = Path(os.environ.get("VITA_ASSETS_DIR", "assets"))
+    inline_publications_bib = os.environ.get("VITA_INLINE_PUBLICATIONS_BIB", "").strip() or None
 
     if output_file:
         base_output_dir = output_file.parent
@@ -1027,6 +1090,7 @@ def main():
         base_output_dir,
         assets_dir,
         source_assets_dir,
+        inline_publications_bib=inline_publications_bib,
     )
 
     if output_file:

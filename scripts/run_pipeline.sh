@@ -205,6 +205,10 @@ pubs_url_display="${pubs_url_display#http://}"
 
 out_vita="$out_base/vita"
 out_pubs="$out_vita/publications"
+inline_bib_name="${json_stem}-vita.bib"
+inline_bib_path="$out_vita/$inline_bib_name"
+inline_bib_for_typst=""
+inline_publications_requested="$(jq -r '[.publications[]? | ((.inline_in_pdf == true) or ((.inline_in_pdf | type) == "object"))] | any' "$json_file")"
 mkdir -p "$out_vita"
 
 state_dir="$out_base/.pipeline-state/$json_stem"
@@ -236,37 +240,6 @@ fi
 # Optional dev autoreload snippet injection (enabled by DEV_RELOAD=1)
 if [[ "${DEV_RELOAD:-0}" == "1" ]] && [[ -f "$cv_html" ]] && ! grep -q "__reload" "$cv_html"; then
   perl -0777 -pe 's~</body>~\n<script>\n(() => {\n  const self = new URL(location.href);\n  self.searchParams.set("__reload", Date.now().toString());\n  let lastModified = null;\n  async function check() {\n    try {\n      const res = await fetch(self.toString(), { cache: "no-store" });\n      const lm = res.headers.get("last-modified") || null;\n      if (lastModified === null) { lastModified = lm; return; }\n      if (lm && lastModified && lm !== lastModified) location.reload();\n    } catch (e) {}\n  }\n  setInterval(check, 800);\n})();\n</script>\n</body>~s' -i "$cv_html"
-fi
-
-# Render + compile CV PDF via Typst
-cv_typ="$out_vita/$cv_typ_name"
-cv_pdf="$out_vita/$cv_pdf_name"
-cv_typ_hash="$(calc_hash \
-  "FILE:$json_file" \
-  "FILE:$toolkit_root/scripts/render_typst_cv.py" \
-  "DIR:$out_vita/assets/profile" \
-  "DIR:$toolkit_root/assets/profile" \
-  "DIR:$assets_source_dir/logos" \
-  "STR:cv_typ_target=$cv_typ")"
-if needs_rebuild "$cv_typ" "$state_dir/cv-typ.sha" "$cv_typ_hash"; then
-  echo "→ Building Typst source"
-  VITA_ASSETS_DIR="$assets_source_dir" python "$toolkit_root/scripts/render_typst_cv.py" "$json_file" "$cv_typ"
-  mark_built "$state_dir/cv-typ.sha" "$cv_typ_hash"
-else
-  echo "→ Typst source up to date"
-fi
-
-cv_pdf_hash="$(calc_hash \
-  "FILE:$cv_typ" \
-  "DIR:$out_vita/assets/profile" \
-  "DIR:$out_vita/assets/logos" \
-  "STR:cv_pdf_target=$cv_pdf")"
-if needs_rebuild "$cv_pdf" "$state_dir/cv-pdf.sha" "$cv_pdf_hash"; then
-  echo "→ Building CV PDF"
-  typst compile "$cv_typ" "$cv_pdf"
-  mark_built "$state_dir/cv-pdf.sha" "$cv_pdf_hash"
-else
-  echo "→ CV PDF up to date"
 fi
 
 if [[ ${#bib_files[@]} -gt 0 ]]; then
@@ -325,6 +298,11 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
   if [[ ! -f "$agg_bib" ]]; then
     echo "Aggregated bib not found: $agg_bib" >&2
     exit 1
+  fi
+
+  if [[ "$inline_publications_requested" == "true" ]]; then
+    cp "$agg_bib" "$inline_bib_path"
+    inline_bib_for_typst="$inline_bib_name"
   fi
 
   pubs_assets_dir="$toolkit_root/pubs-assets"
@@ -404,6 +382,47 @@ LATEX
   fi
 else
   rm -rf "$out_pubs"
+  rm -f "$inline_bib_path"
+fi
+
+# Render + compile CV PDF via Typst
+cv_typ="$out_vita/$cv_typ_name"
+cv_pdf="$out_vita/$cv_pdf_name"
+cv_typ_hash_args=(
+  "FILE:$json_file"
+  "FILE:$toolkit_root/scripts/render_typst_cv.py"
+  "DIR:$out_vita/assets/profile"
+  "DIR:$toolkit_root/assets/profile"
+  "DIR:$assets_source_dir/logos"
+  "STR:cv_typ_target=$cv_typ"
+  "STR:inline_publications_requested=$inline_publications_requested"
+  "STR:inline_bib_for_typst=$inline_bib_for_typst"
+)
+if [[ -n "$inline_bib_for_typst" ]]; then
+  cv_typ_hash_args+=("FILE:$inline_bib_path")
+fi
+cv_typ_hash="$(calc_hash "${cv_typ_hash_args[@]}")"
+if needs_rebuild "$cv_typ" "$state_dir/cv-typ.sha" "$cv_typ_hash"; then
+  echo "→ Building Typst source"
+  VITA_ASSETS_DIR="$assets_source_dir" \
+  VITA_INLINE_PUBLICATIONS_BIB="$inline_bib_for_typst" \
+  python "$toolkit_root/scripts/render_typst_cv.py" "$json_file" "$cv_typ"
+  mark_built "$state_dir/cv-typ.sha" "$cv_typ_hash"
+else
+  echo "→ Typst source up to date"
+fi
+
+cv_pdf_hash="$(calc_hash \
+  "FILE:$cv_typ" \
+  "DIR:$out_vita/assets/profile" \
+  "DIR:$out_vita/assets/logos" \
+  "STR:cv_pdf_target=$cv_pdf")"
+if needs_rebuild "$cv_pdf" "$state_dir/cv-pdf.sha" "$cv_pdf_hash"; then
+  echo "→ Building CV PDF"
+  typst compile "$cv_typ" "$cv_pdf"
+  mark_built "$state_dir/cv-pdf.sha" "$cv_pdf_hash"
+else
+  echo "→ CV PDF up to date"
 fi
 
 echo "Done. Output in: $out_vita"
