@@ -1,0 +1,40 @@
+{
+  "basics": {
+    "name": "Example Person",
+    "label": "Software Engineer",
+    "email": "example@example.com",
+    "url": "https://example.com"
+  },
+  "work": [
+    {
+      "name": "Example Corp",
+      "position": "Engineer",
+      "startDate": "2020-01-01",
+      "summary": "Built useful systems."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Example University",
+      "studyType": "MSc",
+      "area": "Computer Science",
+      "startDate": "2018-01-01",
+      "endDate": "2019-12-31"
+    }
+  ],
+  "publications": [
+    {
+      "name": "Full list online",
+      "url": "/vita/publications/",
+      "authors": [
+        "Example Person"
+      ],
+      "bibfiles": [
+        "publications.bib"
+      ]
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even"
+  }
+}

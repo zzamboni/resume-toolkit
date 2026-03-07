@@ -49,6 +49,7 @@ require_cmd bash
 
 mkdir -p "$CACHE_DIR" "$WORK_DIR/fixtures"
 cp "$FIXTURES_DIR/resume.json" "$WORK_DIR/fixtures/resume.json"
+cp "$FIXTURES_DIR/resume-with-bibfiles.json" "$WORK_DIR/fixtures/resume-with-bibfiles.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 
 run_wrapper() {
@@ -79,5 +80,12 @@ assert_contains "$WORK_DIR/build/out/vita/publications/index.html" "Example Pers
 
 echo "==> Test 3: logo fetch dry-run wiring"
 run_wrapper fetch-logos fixtures/resume.json --dry-run --token dummy >/dev/null
+
+echo "==> Test 4: publications from JSON bibfiles"
+run_wrapper build fixtures/resume-with-bibfiles.json --out build/out-from-json >/dev/null
+assert_file "$WORK_DIR/build/out-from-json/vita/publications/index.html"
+assert_file "$WORK_DIR/build/out-from-json/vita/publications/resume-with-bibfiles-pubs.pdf"
+assert_file "$WORK_DIR/build/out-from-json/vita/publications/resume-with-bibfiles-pubs.bib"
+assert_contains "$WORK_DIR/build/out-from-json/vita/publications/index.html" "Example Person"
 
 echo "All container tests passed."

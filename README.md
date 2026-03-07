@@ -107,6 +107,21 @@ Options:
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
 
+If no BibTeX files are provided on the command line, the pipeline can read them from `publications[].bibfiles` in your JSON resume:
+
+```json
+"publications": [
+  {
+    "name": "Full list online",
+    "url": "/vita/publications/",
+    "authors": ["Diego Zamboni"],
+    "bibfiles": ["zamboni-pubs.bib", "zamboni-patents.bib"]
+  }
+]
+```
+
+`bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
+
 
 <a id="orgd64b9f2"></a>
 

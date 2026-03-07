@@ -18,7 +18,7 @@ Required:
   --out <dir>     Output base directory (relative to working dir or absolute path)
 
 Optional:
-  --bib <file>      BibTeX input (repeatable)
+  --bib <file>      BibTeX input (repeatable). If omitted, uses publications[].bibfiles from the JSON resume
   --pubs-url <url>  Online publications URL used in generated publications PDF footer
 
 Example:
@@ -143,8 +143,30 @@ if [[ ! -f "$json_file" ]]; then
   exit 1
 fi
 
+json_dir="$(cd "$(dirname "$json_file")" && pwd)"
+using_json_bibfiles=0
+if [[ ${#bib_files[@]} -eq 0 ]]; then
+  while IFS= read -r bib; do
+    [[ -n "$bib" ]] || continue
+    bib_files+=("$bib")
+  done < <(
+    jq -r '
+      [.publications[]? | .bibfiles[]? | select(type == "string") | select(length > 0)]
+      | unique
+      | .[]
+    ' "$json_file"
+  )
+  if [[ ${#bib_files[@]} -gt 0 ]]; then
+    using_json_bibfiles=1
+  fi
+fi
+
 for i in "${!bib_files[@]}"; do
-  bib_files[$i]="$(resolve_path "${bib_files[$i]}")"
+  if [[ "$using_json_bibfiles" == "1" && "${bib_files[$i]}" != /* ]]; then
+    bib_files[$i]="$json_dir/${bib_files[$i]}"
+  else
+    bib_files[$i]="$(resolve_path "${bib_files[$i]}")"
+  fi
   if [[ ! -f "${bib_files[$i]}" ]]; then
     echo "BibTeX file not found: ${bib_files[$i]}" >&2
     exit 1
