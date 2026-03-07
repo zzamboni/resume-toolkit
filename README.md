@@ -23,7 +23,7 @@ This project provides a reusable build pipeline for generating:
 -   Publications PDF (from LaTeX/BibTeX, using [AwesomeCV](https://github.com/posquit0/Awesome-CV), so it looks the same as the resume PDF)
 -   Aggregated publications BibTeX
 
-The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a Docker image.
+The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
 
 
 <a id="orge0cfd3e"></a>
@@ -162,7 +162,7 @@ Download company/institution logos from the resume file into `assets/logos/` in 
 If matching logo files are found under `assets/logos/`, the `build` step will include them automatically in the generated PDF. You can also provide/update the images by hand with the appropriate name.
 
 ```sh
-./build-resume.sh fetch-logos resume.json --overwrite
+./build-resume.sh fetch-logos resume.json
 ```
 
 Options:
@@ -217,6 +217,132 @@ You can also call container entrypoint commands directly, for example:
 
 `tasks` lists the `mise` tasks available inside the container (you can add `--hidden` to see internal tasks), and `shell` gives you an interactive shell inside the container.
 
+## Even theme extensions
+
+The version of jsonresume-theme-even used by this toolkit supports the following additional options (described also in [jsonresume-them-even PR#33](https://github.com/rbardini/jsonresume-theme-even/pull/33)):
+
+### Icons
+
+By default, [Feather icons](https://feathericons.com/) are used for the profiles. You can also use [Font Awesome icons](https://fontawesome.com/) by setting the `.meta.themeOptions.icons` resume field to "fontawesome":
+
+```json
+{
+  "meta": {
+    "themeOptions": {
+      "icons": "fontawesome"
+    }
+  }
+}
+```
+
+### Certificate badges and notes
+
+If a [certificate](https://docs.jsonresume.org/schema#certificates) entry contains an `image` field, it is used as the URL of an image to display next to the entry as a badge for the certificate.
+
+If a certificate entry contains only `name` and optionally `url` but no `issuer` or `date`, it is considered as a "note" entry and rendered at the top of the list in a different format (for example to link to a full list).
+
+### Grouping projects by type
+
+If the `.meta.themeOptions.projectsByType` is `true`, project entries are rendered as separate sections according to their `type` field, instead of as a single section.
+
+### Sections
+
+#### Ordering
+
+You can override what sections are displayed, and in what order, via the `.meta.themeOptions.sections` resume field.
+
+Here's an example with all available sections in their default order:
+
+```json
+{
+  "meta": {
+    "themeOptions": {
+      "sections": [
+        "work",
+        "volunteer",
+        "education",
+        "projects",
+        "awards",
+        "certificates",
+        "publications",
+        "skills",
+        "languages",
+        "interests",
+        "references"
+      ]
+    }
+  }
+}
+```
+
+Any sections not in the above list are not registered and won't be displayed in the final render.
+
+#### Custom Labels
+
+You can override the default section labels. Particularly useful if you want to translate a resume into another language.
+
+```json
+{
+  "meta": {
+    "themeOptions": {
+      "sectionLabels": {
+        "work": "Jobs",
+        "projects": "Projekter"
+      }
+    }
+  }
+}
+```
+
+If `.meta.themeOptions.projectsByType` is `true`, you can also break out project types into individually ordered sections by using `projects:<type>` entries. For example:
+
+```json
+{
+  "meta": {
+    "themeOptions": {
+      "projectsByType": true,
+      "sections": ["work", "projects:application", "projects:library", "skills"],
+      "sectionLabels": {
+        "projects:application": "Apps",
+        "projects:library": "Libraries"
+      }
+    }
+  }
+}
+```
+
+### Table of contents
+
+You can enable a floating table of contents on the right side of the screen by setting `.meta.themeOptions.showTableOfContents` to `true`:
+
+```json
+{
+  "meta": {
+    "themeOptions": {
+      "showTableOfContents": true
+    }
+  }
+}
+```
+
+The table of contents automatically includes links to all resume sections that have content, plus a "Top" link to return to the beginning of the document. The active section is highlighted as you scroll through the resume. The table of contents is automatically hidden on smaller screens and in print mode.
+
+### Floating links
+
+You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` name is looked up in FontAwesome.
+
+```json
+{
+  "meta": {
+    "themeOptions": {
+      "links": [
+        { "name": "PDF", "url": "/vita/zamboni-vita.pdf", "icon": "file-pdf" },
+        { "name": "GitHub", "url": "https://github.com/zzamboni", "icon": "github" }
+      ]
+    }
+  }
+}
+```
 
 <a id="orgc2ef02d"></a>
 
@@ -252,11 +378,44 @@ If you already cloned without submodules:
 git submodule update --init --recursive
 ```
 
-The \`mise\` tasks are intentionally minimal and user-facing:
+All the `build-resume.sh` functionality is implemented through `mise` tasks inside the container. If you want to run these on your host machine and not inside the container, make sure you have [mise](https://mise.jdx.dev/) installed, then you can check out this repository and initialize the mise environment:
 
--   `build`
--   `fetch-logos`
--   `update-certs`
+``` sh
+git clone https://github.com/zzamboni/resume-toolkit.git
+cd resume-toolkit
+mise trust .
+mise install
+HUSKY=0 NPM_CONFIG_IGNORE_SCRIPTS=true mise run bootstrap
+```
+
+You can then run the `mise` tasks directly, with the same parameters described above for `build-resume.sh`, e.g.:
+
+``` sh
+mise build resume.json pubs-src/publications.bib --watch --serve
+mise fetch-logos resume.json
+mise update-certs <credly-username> resume.json
+```
+
+You can build the Docker image locally with:
+
+``` sh
+mise pipeline-image-build
+```
+
+Use `mise tasks --hidden` to see all the tasks, including development and testing:
+
+``` sh
+Name                  Description
+bootstrap             Install/update project dependencies (Python + npm)
+build                 Run CV + publications pipeline
+docker-shell          Open an interactive shell in the Docker image
+fetch-logos           Fetch company/education logos from JSON resume into /work assets
+pipeline-docker       Run pipeline through standalone Docker image
+pipeline-image-build  Build standalone pipeline Docker image
+test-container        Run container integration tests
+update-certs          Update certificates from credly
+update-pub-numbers    Update publication reference numbers in JSON resume
+```
 
 <a id="org487a931"></a>
 

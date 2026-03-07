@@ -196,36 +196,6 @@ uv pip sync requirements.txt
 if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
 '''
 
-[tasks.pipeline-devcontainer]
-description = "Run pipeline inside devcontainer"
-hide = true
-usage = '''
-arg "<resume>" help="JSONresume file"
-arg "[bibfiles]" var=#true help="BibTeX files (optional)"
-flag "--pubs-url <url>" help="Online publications URL for publications PDF footer"
-flag "--out <dir>" help="Output directory"
-'''
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-
-args=("$usage_resume")
-if [[ -n "${usage_bibfiles:-}" ]]; then
-  read -r -a arr <<< "$usage_bibfiles"
-  for f in "${arr[@]}"; do
-    args+=("$f")
-  done
-fi
-if [[ -n "${usage_out:-}" ]]; then
-  args+=(--out "$usage_out")
-fi
-if [[ -n "${usage_pubs_url:-}" ]]; then
-  args+=(--pubs-url "$usage_pubs_url")
-fi
-
-devcontainer exec --workspace-folder . -- mise run pipeline "${args[@]}"
-'''
-
 [tasks.pipeline-image-build]
 description = "Build standalone pipeline Docker image"
 hide = true
