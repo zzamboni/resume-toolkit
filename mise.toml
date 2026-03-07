@@ -229,6 +229,9 @@ devcontainer exec --workspace-folder . -- mise run pipeline "${args[@]}"
 [tasks.pipeline-image-build]
 description = "Build standalone pipeline Docker image"
 hide = true
+usage = '''
+flag "--no-cache" help="Build Docker image without layer cache"
+'''
 sources = [
   "Dockerfile",
   ".dockerignore",
@@ -245,7 +248,12 @@ sources = [
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
-docker build --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
+docker_args=()
+if [[ -n "${usage_no_cache:-}" ]]; then
+  docker_args+=(--no-cache)
+fi
+
+docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 mise test-container
 '''
 
