@@ -1,7 +1,5 @@
 # Resume Toolkit - JSONresume/BibTeX to HTML/PDF
 
-![Docker Image Version](https://img.shields.io/docker/v/zzamboni/resume-toolkit)
-
 - [Requirements](#orge0cfd3e)
 - [Quick Start](#org90b52ae)
 - [Output Layout](#org1334766)
