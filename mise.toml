@@ -231,6 +231,7 @@ description = "Build standalone pipeline Docker image"
 hide = true
 usage = '''
 flag "--no-cache" help="Build Docker image without layer cache"
+flag "--no-cache-filter <filter>" var=#true help="Do not use cache for specific build stage(s); repeatable"
 '''
 sources = [
   "Dockerfile",
@@ -252,7 +253,14 @@ docker_args=()
 if [[ -n "${usage_no_cache:-}" ]]; then
   docker_args+=(--no-cache)
 fi
+if [[ -n "${usage_no_cache_filter:-}" ]]; then
+  read -r -a cache_filters <<< "$usage_no_cache_filter"
+  for filter in "${cache_filters[@]}"; do
+    docker_args+=(--no-cache-filter "$filter")
+  done
+fi
 
+echo docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 mise test-container
 '''

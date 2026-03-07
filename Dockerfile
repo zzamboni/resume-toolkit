@@ -53,6 +53,8 @@ COPY fonts/ /usr/local/share/fonts/
 COPY pubs-assets/ ./pubs-assets/
 RUN fc-cache -f
 
+FROM runtime AS prewarm
+
 ARG PREWARM_CACHE=0
 RUN if [ "$PREWARM_CACHE" = "1" ]; then \
       mkdir -p "$TECTONIC_CACHE_DIR" /tmp/tectonic-prime/fonts; \
@@ -104,6 +106,8 @@ RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh \
   && mise install \
   && HUSKY=0 NPM_CONFIG_IGNORE_SCRIPTS=true mise run bootstrap \
   && npm cache clean --force
+
+FROM prewarm AS final
 
 COPY scripts/ ./scripts/
 COPY templates/ ./templates/
