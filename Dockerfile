@@ -43,6 +43,8 @@ RUN cd /tmp \
     && cp biber /usr/bin/biber \
     && rm -f /tmp/biber.tar.gz /tmp/biber
 
+RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
+
 WORKDIR /opt/vita-toolkit
 
 RUN mkdir -p /opt/vita-cache \
@@ -57,18 +59,18 @@ FROM runtime AS prewarm
 
 ARG PREWARM_CACHE=0
 RUN if [ "$PREWARM_CACHE" = "1" ]; then \
-      mkdir -p "$TECTONIC_CACHE_DIR" /tmp/tectonic-prime/fonts; \
-      cp /opt/vita-toolkit/pubs-assets/awesome-cv.cls /tmp/tectonic-prime/; \
-      cp -a /opt/vita-toolkit/pubs-assets/fonts/. /tmp/tectonic-prime/fonts/; \
-      printf '%s\n' \
+      mkdir -p "$TECTONIC_CACHE_DIR" /tmp/tectonic-prime/fonts \
+      && cp /opt/vita-toolkit/pubs-assets/awesome-cv.cls /tmp/tectonic-prime/ \
+      && cp -a /opt/vita-toolkit/pubs-assets/fonts/. /tmp/tectonic-prime/fonts/ \
+      && printf '%s\n' \
         '@article{prime-entry,' \
         '  title={Prime},' \
         '  author={Prime, Example},' \
         '  journal={Prime Journal},' \
         '  year={2024},' \
         '  keyword={other}' \
-        '}' > /tmp/tectonic-prime/publications.bib; \
-      printf '%s\n' \
+        '}' > /tmp/tectonic-prime/publications.bib \
+      && printf '%s\n' \
         '\documentclass[12pt,a4paper]{awesome-cv}' \
         '\usepackage[defernumbers=true,style=numeric,sorting=ydnt,backend=biber]{biblatex}' \
         '\addbibresource{publications.bib}' \
@@ -91,18 +93,17 @@ RUN if [ "$PREWARM_CACHE" = "1" ]; then \
         '\cvsection{Publications}' \
         '\nocite{*}' \
         '\printbibliography[keyword=other, heading=cvbibsection, title=Other Publications]' \
-        '\end{document}' > /tmp/tectonic-prime/publications.tex; \
-      cd /tmp/tectonic-prime && tectonic publications.tex; \
-      (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"') | typst compile - /tmp/tectonic-prime/prime-typst.pdf; \
-      rm -rf /tmp/tectonic-prime; \
+        '\end{document}' > /tmp/tectonic-prime/publications.tex \
+      && cd /tmp/tectonic-prime && tectonic publications.tex \
+      && (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"') | typst compile - /tmp/tectonic-prime/prime-typst.pdf \
+      && rm -rf /tmp/tectonic-prime; \
     fi \
   && chmod -R a+rwX /opt/vita-cache
 
 COPY mise.toml requirements.txt package.json package-lock.json ./
 COPY themes/jsonresume-theme-even/ ./themes/jsonresume-theme-even/
 
-RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh \
-  && mise trust /opt/vita-toolkit/mise.toml \
+RUN mise trust /opt/vita-toolkit/mise.toml \
   && mise install \
   && HUSKY=0 NPM_CONFIG_IGNORE_SCRIPTS=true mise run bootstrap \
   && npm cache clean --force

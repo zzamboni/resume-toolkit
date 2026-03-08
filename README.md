@@ -399,22 +399,20 @@ mise update-certs <credly-username> resume.json
 You can build the Docker image locally with:
 
 ``` sh
-mise pipeline-image-build
+mise toolkit-image-build
 ```
 
 Use `mise tasks --hidden` to see all the tasks, including development and testing:
 
 ``` sh
-Name                  Description
-bootstrap             Install/update project dependencies (Python + npm)
-build                 Run CV + publications pipeline
-docker-shell          Open an interactive shell in the Docker image
-fetch-logos           Fetch company/education logos from JSON resume into /work assets
-pipeline-docker       Run pipeline through standalone Docker image
-pipeline-image-build  Build standalone pipeline Docker image
-test-toolkit          Run toolkit integration tests
-update-certs          Update certificates from credly
-update-pub-numbers    Update publication reference numbers in JSON resume
+Name                 Description
+bootstrap            Install/update project dependencies (Python + npm)
+build                Run CV + publications pipeline
+fetch-logos          Fetch company/education logos from JSON resume into /work assets
+test-toolkit         Run toolkit integration tests
+toolkit-image-build  Build standalone toolkit Docker image
+update-certs         Update certificates from credly
+update-pub-numbers   Update publication reference numbers in JSON resume
 ```
 
 <a id="org487a931"></a>

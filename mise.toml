@@ -196,12 +196,13 @@ uv pip sync requirements.txt
 if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
 '''
 
-[tasks.pipeline-image-build]
-description = "Build standalone pipeline Docker image"
+[tasks.toolkit-image-build]
+description = "Build standalone toolkit Docker image"
 hide = true
 usage = '''
 flag "--no-cache" help="Build Docker image without layer cache"
 flag "--no-cache-filter <filter>" var=#true help="Do not use cache for specific build stage(s); repeatable"
+flag "--no-test" help="Do not run toolkit tests after build"
 '''
 sources = [
   "Dockerfile",
@@ -232,57 +233,8 @@ fi
 
 echo docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
-mise test-toolkit
-'''
-
-[tasks.docker-shell]
-description = "Open an interactive shell in the Docker image"
-alias = ["bash", "docker-bash"]
-hide = true
-run = "docker/run-container.sh bash"
-
-[tasks.pipeline-docker]
-description = "Run pipeline through standalone Docker image"
-hide = true
-usage = '''
-arg "<resume>" help="JSONresume file"
-arg "[bibfiles]" var=#true help="BibTeX files (optional)"
-flag "--pubs-url <url>" help="Online publications URL for publications PDF footer"
-flag "--out <dir>" help="Output directory"
-flag "--watch" help="Watch the command given"
-flag "--serve" help="Serve output directory and run in watch mode"
-'''
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-
-args=("$usage_resume")
-if [[ -n "${usage_bibfiles:-}" ]]; then
-  read -r -a arr <<< "$usage_bibfiles"
-  for f in "${arr[@]}"; do
-    args+=("$f")
-  done
-fi
-if [[ -n "${usage_out:-}" ]]; then
-  args+=(--out "$usage_out")
-fi
-if [[ -n "${usage_pubs_url:-}" ]]; then
-  args+=(--pubs-url "$usage_pubs_url")
-fi
-if [[ -n "${usage_watch:-}" ]]; then
-  args+=(--watch)
-fi
-if [[ -n "${usage_serve:-}" ]]; then
-  args+=(--serve)
-fi
-
-if [[ -n "${usage_serve:-}" ]]; then
-  VITA_PIPELINE_IMAGE="{{vars.pipeline_docker_image}}" \
-  VITA_PIPELINE_PORT_MAP="{{vars.port}}:{{vars.port}}" \
-    docker/run-container.sh build "${args[@]}"
-else
-  VITA_PIPELINE_IMAGE="{{vars.pipeline_docker_image}}" \
-    docker/run-container.sh build "${args[@]}"
+if [[ -z "${usage_no_test:-}" ]]; then
+   mise test-toolkit
 fi
 '''
 
