@@ -19,14 +19,16 @@
       "url": "/vita/publications/",
       "authors": [
         "Example Person"
-      ],
+      ]
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even",
+    "publicationsOptions": {
       "bibfiles": [
         "publications.bib"
       ],
       "inline_in_pdf": true
     }
-  ],
-  "meta": {
-    "theme": "jsonresume-theme-even"
   }
 }

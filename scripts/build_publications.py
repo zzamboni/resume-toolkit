@@ -25,7 +25,7 @@ EXPORT_SELECTED = False
 SELECTED_KEYWORD = "selected"
 SELECTED_OUT_FILE = Path("site/selected-publications.json")
 
-SECTION_ORDER = [
+DEFAULT_SECTION_ORDER = [
     "book",
     "editorial",
     "thesis",
@@ -37,7 +37,7 @@ SECTION_ORDER = [
     "other",
 ]
 
-SECTION_TITLES = {
+DEFAULT_SECTION_TITLES = {
     "book": "Books",
     "editorial": "Editorial Activities",
     "thesis": "Theses",
@@ -164,6 +164,51 @@ def load_resume_name() -> str:
         return "Publications"
 
 
+def load_publications_options() -> dict:
+    if not PUBS_RESUME_JSON:
+        return {}
+    path = Path(PUBS_RESUME_JSON)
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    meta = data.get("meta", {})
+    if not isinstance(meta, dict):
+        return {}
+    options = meta.get("publicationsOptions", {})
+    return options if isinstance(options, dict) else {}
+
+
+def resolve_sectioning_config(publications_options: dict) -> tuple[bool, list[str], dict[str, str]]:
+    pub_sections = publications_options.get("pubSections", True)
+
+    if pub_sections is False:
+        return False, ["all"], {"all": "Publications"}
+
+    if isinstance(pub_sections, list):
+        section_order = [str(s) for s in pub_sections if isinstance(s, str) and s.strip()]
+        if not section_order:
+            return False, ["all"], {"all": "Publications"}
+    else:
+        section_order = list(DEFAULT_SECTION_ORDER)
+
+    custom_titles = publications_options.get("pubSectionTitles", {})
+    if not isinstance(custom_titles, dict):
+        custom_titles = {}
+
+    section_titles = {}
+    for section in section_order:
+        title = custom_titles.get(section)
+        if isinstance(title, str) and title.strip():
+            section_titles[section] = title
+        else:
+            section_titles[section] = DEFAULT_SECTION_TITLES.get(section, section)
+
+    return True, section_order, section_titles
+
+
 # Minimal accent mapping (extend as needed)
 LATEX_ACCENTS = {
     r"\\'a": "á",
@@ -242,7 +287,7 @@ def clean_bib_entry(entry):
             cleaned[k] = str(v)
     return cleaned
 
-def write_combined_bib(raw_entries, sections):
+def write_combined_bib(raw_entries, sections, section_order, section_titles, sectioning_enabled):
     if not PUBS_OUT_DIR:
         return
     PUBS_OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -251,15 +296,28 @@ def write_combined_bib(raw_entries, sections):
         (e.get("key") or e.get("ID")): e for e in raw_entries if (e.get("key") or e.get("ID"))
     }
     chunks = []
-    for section_key in SECTION_ORDER:
-        section_entries = sections.get(section_key, [])
-        if not section_entries:
-            continue
-        section_title = SECTION_TITLES.get(section_key, section_key)
-        chunks.append(f"% ====== {section_title} ======\n")
+    if sectioning_enabled:
+        for section_key in section_order:
+            section_entries = sections.get(section_key, [])
+            if not section_entries:
+                continue
+            section_title = section_titles.get(section_key, section_key)
+            chunks.append(f"% ====== {section_title} ======\n")
+            section_db = bibtexparser.bibdatabase.BibDatabase()
+            entries_for_section = []
+            for e in section_entries:
+                key = e.get("key") or e.get("ID")
+                if not key:
+                    continue
+                raw = raw_by_key.get(key, e)
+                entries_for_section.append(clean_bib_entry(raw))
+            section_db.entries = entries_for_section
+            chunks.append(bibtexparser.dumps(section_db).strip())
+            chunks.append("")
+    else:
         section_db = bibtexparser.bibdatabase.BibDatabase()
         entries_for_section = []
-        for e in section_entries:
+        for e in sections.get("all", []):
             key = e.get("key") or e.get("ID")
             if not key:
                 continue
@@ -270,10 +328,16 @@ def write_combined_bib(raw_entries, sections):
         chunks.append("")
     combined_path.write_text("\n".join(chunks).strip() + "\n")
 
-def group_by_section(entries):
+def group_by_section(entries, section_order, sectioning_enabled):
     grouped = defaultdict(list)
     for e in entries:
-        grouped[e["_section"]].append(e)
+        section = e.get("_section")
+        if sectioning_enabled:
+            if section in section_order:
+                grouped[section].append(e)
+        else:
+            if section == "all":
+                grouped["all"].append(e)
 
     def sort_key(entry):
         year = entry.get("year")
@@ -282,10 +346,13 @@ def group_by_section(entries):
         date = entry.get("date") or ""
         return (0, str(date))
 
+    if not sectioning_enabled:
+        return {"all": sorted(grouped.get("all", []), key=sort_key, reverse=True)}
+
     # Ensure empty sections still exist, and sort each section by year (desc)
     return {
         s: sorted(grouped.get(s, []), key=sort_key, reverse=True)
-        for s in SECTION_ORDER
+        for s in section_order
     }
 
 def load_bibtex():
@@ -327,7 +394,7 @@ def entry_to_jsonresume_publication(e):
         "summary": " — ".join([b for b in summary_bits if b]),
     }
 
-def normalize(raw_entries):
+def normalize(raw_entries, section_order, sectioning_enabled):
     entries = copy.deepcopy(raw_entries)
     for e in entries:
         # Ensure we have the bibtex key for anchoring
@@ -375,28 +442,33 @@ def normalize(raw_entries):
             if k.strip()
         }
 
-        # Determine section (first match wins)
-        section = "other"
-        for s in SECTION_ORDER:
-            if s in e["_keywords"]:
-                section = s
-                break
-
-        e["_section"] = section
+        if not sectioning_enabled:
+            e["_section"] = "all"
+        else:
+            # Determine section (first match wins). If none matches, skip entry.
+            section = None
+            for s in section_order:
+                if s in e["_keywords"]:
+                    section = s
+                    break
+            e["_section"] = section
 
     # Sort entries inside sections by year desc
     return sorted(entries, key=lambda e: e["year"], reverse=True)
 
 def main():
+    publications_options = load_publications_options()
+    sectioning_enabled, section_order, section_titles = resolve_sectioning_config(publications_options)
+
     raw_entries = load_bibtex()
-    entries = normalize(raw_entries)
-    sections = group_by_section(entries)
-    write_combined_bib(raw_entries, sections)
+    entries = normalize(raw_entries, section_order, sectioning_enabled)
+    sections = group_by_section(entries, section_order, sectioning_enabled)
+    write_combined_bib(raw_entries, sections, section_order, section_titles, sectioning_enabled)
 
     non_empty_sections = [
-        s for s in SECTION_ORDER
+        s for s in section_order
         if sections.get(s)
-    ]
+    ] if sectioning_enabled else []
 
     selected_entries = [
         e for e in entries
@@ -416,8 +488,9 @@ def main():
     
     html = tpl.render(
         sections=sections,
-        section_order=SECTION_ORDER,
-        section_titles=SECTION_TITLES,
+        section_order=section_order,
+        section_titles=section_titles,
+        sectioning_enabled=sectioning_enabled,
         toc_sections=non_empty_sections,
         generated=datetime.now(UTC).strftime("%Y-%m-%d"),
         dev_reload=dev_reload,

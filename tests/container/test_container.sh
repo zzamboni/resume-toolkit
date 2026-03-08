@@ -49,6 +49,23 @@ assert_contains() {
   fi
 }
 
+assert_not_contains() {
+  local path="$1"
+  local pattern="$2"
+  if command -v rg >/dev/null 2>&1; then
+    rg -q "$pattern" "$path" && {
+      echo "error: unexpected pattern '$pattern' found in $path" >&2
+      exit 1
+    }
+  else
+    grep -Eq "$pattern" "$path" && {
+      echo "error: unexpected pattern '$pattern' found in $path" >&2
+      exit 1
+    }
+  fi
+  true
+}
+
 require_cmd docker
 require_cmd bash
 
@@ -57,6 +74,8 @@ cp "$FIXTURES_DIR/resume.json" "$WORK_DIR/fixtures/resume.json"
 cp "$FIXTURES_DIR/resume-with-bibfiles.json" "$WORK_DIR/fixtures/resume-with-bibfiles.json"
 cp "$FIXTURES_DIR/resume-inline-publications.json" "$WORK_DIR/fixtures/resume-inline-publications.json"
 cp "$FIXTURES_DIR/resume-inline-publications-config.json" "$WORK_DIR/fixtures/resume-inline-publications-config.json"
+cp "$FIXTURES_DIR/resume-publications-unsectioned.json" "$WORK_DIR/fixtures/resume-publications-unsectioned.json"
+cp "$FIXTURES_DIR/resume-publications-custom-sections.json" "$WORK_DIR/fixtures/resume-publications-custom-sections.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 
 run_wrapper() {
@@ -107,5 +126,18 @@ run_wrapper build fixtures/resume-inline-publications-config.json --out build/ou
 assert_file "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ"
 assert_file "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config-vita.bib"
 assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#cv-publication\(bib: bibliography\("resume-inline-publications-config-vita\.bib"\), ref-style: "apa", ref-full: false, key-list: \("example2024paper",\)\)'
+
+echo "==> Test 7: unsectioned publications output"
+run_wrapper build fixtures/resume-publications-unsectioned.json --out build/out-unsectioned >/dev/null
+assert_file "$WORK_DIR/build/out-unsectioned/vita/publications/index.html"
+assert_file "$WORK_DIR/build/out-unsectioned/vita/publications/resume-publications-unsectioned-pubs.pdf"
+assert_contains "$WORK_DIR/build/out-unsectioned/vita/publications/index.html" "Example Person"
+assert_not_contains "$WORK_DIR/build/out-unsectioned/vita/publications/index.html" 'h3 id='
+
+echo "==> Test 8: custom publications sections and titles"
+run_wrapper build fixtures/resume-publications-custom-sections.json --out build/out-custom-sections >/dev/null
+assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
+assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
+assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
 
 echo "All container tests passed."

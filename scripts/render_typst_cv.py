@@ -683,16 +683,19 @@ INLINE_PUBLICATIONS_DEFAULTS: Dict[str, Any] = {
 }
 
 
-def get_inline_publications_config(publications: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
-    """Return inline bibliography config if enabled in publications."""
-    for pub in publications:
-        if not isinstance(pub, dict):
-            continue
-        inline = pub.get("inline_in_pdf")
-        if inline is True:
-            return dict(INLINE_PUBLICATIONS_DEFAULTS)
-        if isinstance(inline, dict):
-            return dict(inline)
+def get_inline_publications_config(resume_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Return inline bibliography config from meta.publicationsOptions."""
+    meta = resume_data.get("meta", {})
+    if not isinstance(meta, dict):
+        return None
+    options = meta.get("publicationsOptions", {})
+    if not isinstance(options, dict):
+        return None
+    inline = options.get("inline_in_pdf")
+    if inline is True:
+        return dict(INLINE_PUBLICATIONS_DEFAULTS)
+    if isinstance(inline, dict):
+        return dict(inline)
     return None
 
 
@@ -717,6 +720,7 @@ def to_typst_value(value: Any) -> str:
 def render_publications(
     publications: List[Dict[str, Any]],
     label: str = "Publications",
+    inline_publications_config: Optional[Dict[str, Any]] = None,
     inline_bib_path: Optional[str] = None,
 ) -> str:
     """Render publications using brilliant-cv."""
@@ -728,10 +732,9 @@ def render_publications(
         f'letters: {HIGHLIGHTED_LETTERS})\n\n'
     )
 
-    inline_cfg = get_inline_publications_config(publications)
-    if inline_bib_path and inline_cfg is not None:
+    if inline_bib_path and inline_publications_config is not None:
         cv_publication_args = [f'bib: bibliography("{escape_typst(inline_bib_path)}")']
-        for key, value in inline_cfg.items():
+        for key, value in inline_publications_config.items():
             cv_publication_args.append(f"{key}: {to_typst_value(value)}")
         output += f'#cv-publication({", ".join(cv_publication_args)})\n\n'
         return output
@@ -835,6 +838,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
     section_labels = theme_options.get("sectionLabels", {})
     projects_by_type = bool(theme_options.get("projectsByType"))
     projects = resume_data.get("projects", [])
+    inline_publications_config = get_inline_publications_config(resume_data)
     has_project_overrides = (not sections_is_default) and any(
         isinstance(section, str) and (section == "projects" or section.startswith(PROJECT_SECTION_PREFIX))
         for section in sections
@@ -912,6 +916,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
             output += render_publications(
                 resume_data.get("publications", []),
                 label=label_for("publications", "Publications"),
+                inline_publications_config=inline_publications_config,
                 inline_bib_path=inline_publications_bib,
             )
             continue

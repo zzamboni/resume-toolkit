@@ -18,7 +18,7 @@ Required:
   --out <dir>     Output base directory (relative to working dir or absolute path)
 
 Optional:
-  --bib <file>      BibTeX input (repeatable). If omitted, uses publications[].bibfiles from the JSON resume
+  --bib <file>      BibTeX input (repeatable). If omitted, uses meta.publicationsOptions.bibfiles from the JSON resume
   --pubs-url <url>  Online publications URL used in generated publications PDF footer
 
 Example:
@@ -144,6 +144,48 @@ if [[ ! -f "$json_file" ]]; then
 fi
 
 json_dir="$(cd "$(dirname "$json_file")" && pwd)"
+pub_sections_mode="$(jq -r '
+  .meta.publicationsOptions.pubSections as $s
+  | if $s == false then "none"
+    elif ($s | type) == "array" then "custom"
+    else "default"
+    end
+' "$json_file")"
+
+default_pub_sections=(book editorial thesis refereed techreport presentations invited patent other)
+pub_sections=()
+if [[ "$pub_sections_mode" == "custom" ]]; then
+  mapfile -t pub_sections < <(jq -r '.meta.publicationsOptions.pubSections[]? | select(type == "string") | select(length > 0)' "$json_file")
+  if [[ ${#pub_sections[@]} -eq 0 ]]; then
+    pub_sections_mode="none"
+  fi
+fi
+if [[ "$pub_sections_mode" == "default" ]]; then
+  pub_sections=("${default_pub_sections[@]}")
+fi
+
+declare -A pub_section_titles=(
+  [book]="Books"
+  [editorial]="Editorial Activities"
+  [thesis]="Theses"
+  [refereed]="Refereed Papers"
+  [techreport]="Tech Reports"
+  [presentations]="Presentations at Conferences and Workshops"
+  [invited]="Invited Talks and Articles"
+  [patent]="Patents"
+  [other]="Other Publications"
+)
+while IFS=$'\t' read -r k v; do
+  [[ -n "${k:-}" && -n "${v:-}" ]] || continue
+  pub_section_titles["$k"]="$v"
+done < <(jq -r '
+  .meta.publicationsOptions.pubSectionTitles // {}
+  | to_entries[]
+  | select((.key | type) == "string")
+  | select((.value | type) == "string")
+  | [.key, .value] | @tsv
+' "$json_file")
+
 using_json_bibfiles=0
 if [[ ${#bib_files[@]} -eq 0 ]]; then
   while IFS= read -r bib; do
@@ -151,7 +193,7 @@ if [[ ${#bib_files[@]} -eq 0 ]]; then
     bib_files+=("$bib")
   done < <(
     jq -r '
-      [.publications[]? | .bibfiles[]? | select(type == "string") | select(length > 0)]
+      [.meta.publicationsOptions.bibfiles[]? | select(type == "string") | select(length > 0)]
       | unique
       | .[]
     ' "$json_file"
@@ -208,7 +250,10 @@ out_pubs="$out_vita/publications"
 inline_bib_name="${json_stem}-vita.bib"
 inline_bib_path="$out_vita/$inline_bib_name"
 inline_bib_for_typst=""
-inline_publications_requested="$(jq -r '[.publications[]? | ((.inline_in_pdf == true) or ((.inline_in_pdf | type) == "object"))] | any' "$json_file")"
+inline_publications_requested="$(jq -r '
+  .meta.publicationsOptions.inline_in_pdf as $i
+  | ($i == true) or (($i | type) == "object")
+' "$json_file")"
 mkdir -p "$out_vita"
 
 state_dir="$out_base/.pipeline-state/$json_stem"
@@ -266,6 +311,7 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
   pubs_html_hash_args=(
     "FILE:$toolkit_root/scripts/build_publications.py"
     "FILE:$toolkit_root/templates/publications.html.j2"
+    "FILE:$json_file"
     "STR:resume_name=$resume_name"
     "STR:pubs_links=$pubs_links_json"
     "STR:pubs_bib_name=$pubs_bib_name"
@@ -345,15 +391,20 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
 \cvsection{Publications}
 \label{publications}
 \nocite{*}
-\printbibliography[keyword=book,          heading=cvbibsection, title=Books]
-\printbibliography[keyword=editorial,     heading=cvbibsection, title=Editorial Activities]
-\printbibliography[keyword=thesis,        heading=cvbibsection, title=Theses]
-\printbibliography[keyword=refereed,      heading=cvbibsection, title=Refereed Papers]
-\printbibliography[keyword=techreport,    heading=cvbibsection, title=Tech Reports]
-\printbibliography[keyword=presentations, heading=cvbibsection, title=Presentations at Conferences and Workshops]
-\printbibliography[keyword=invited,       heading=cvbibsection, title=Invited Talks and Articles]
-\printbibliography[keyword=patent,        heading=cvbibsection, title=Patents]
-\printbibliography[keyword=other,         heading=cvbibsection, title=Other Publications]
+LATEX
+
+  if [[ "$pub_sections_mode" == "none" ]]; then
+    cat >> "$pubs_work_dir/$pubs_tex_name" <<'LATEX'
+\printbibliography[heading=none]
+LATEX
+  else
+    for section in "${pub_sections[@]}"; do
+      section_title="${pub_section_titles[$section]:-$section}"
+      printf '\\printbibliography[keyword=%s, heading=cvbibsection, title=%s]\n' "$section" "{$section_title}" >> "$pubs_work_dir/$pubs_tex_name"
+    done
+  fi
+
+  cat >> "$pubs_work_dir/$pubs_tex_name" <<'LATEX'
 \end{document}
 LATEX
 
@@ -362,6 +413,7 @@ LATEX
   pubs_pdf="$out_pubs/$pubs_pdf_name"
   pubs_pdf_hash="$(calc_hash \
     "FILE:$toolkit_root/scripts/run_pipeline.sh" \
+    "FILE:$json_file" \
     "FILE:$agg_bib" \
     "DIR:$pubs_assets_dir" \
     "STR:resume_name=$resume_name" \

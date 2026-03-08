@@ -360,6 +360,7 @@ footer {
 <h2>Publications</h2>
 </div>
 
+{% if sectioning_enabled and toc_sections %}
 <nav class="table-of-contents" aria-label="Table of contents">
   <ul>
     <li>
@@ -372,8 +373,10 @@ footer {
     {% endfor %}
   </ul>
 </nav>
+{% endif %}
 
 {% set pub_counter = namespace(value=0) %}
+{% if sectioning_enabled %}
 {% for section in section_order %}
 {% set items = sections[section] %}
 {% if items %}
@@ -416,6 +419,43 @@ footer {
 {% endfor %}
 {% endif %}
 {% endfor %}
+{% else %}
+{% for e in sections["all"] %}
+{% set pub_counter.value = pub_counter.value + 1 %}
+{% if dev_reload %}
+<!-- <div style="background-color: lightgrey"><pre>{{ e|pprint }}</pre></div><br/> -->
+{% endif %}
+<div class="pub" id="pub-{{ e.key }}" itemscope itemtype="https://schema.org/ScholarlyArticle">
+  <span class="pub-ref">
+    <a href="#pub-{{ e.key }}" class="ref-number" data-ref-number="{{ pub_counter.value }}" title="Copy link to clipboard">
+      [{{ pub_counter.value }}]
+    </a>
+  </span>
+  <div class="pub-content">
+    <strong itemprop="name">
+      {% if e.url or e._doi_url %}
+        <a itemprop="url" href="{{ e.url or e._doi_url }}">
+          {{ e.title or e.issuetitle }}
+        </a>
+      {% else %}
+        {{ e.title or e.issuetitle }}
+      {% endif %}
+    </strong><br>
+    {% if e.authors %}{{ e.authors }}<br>{% elif e.editor %}Editors: {{ e.editor }}<br>{% endif %}
+    <span class="meta">
+      {% if e.ENTRYTYPE == "phdthesis" %}{{ e.type or "PhD thesis" }}, {{ e.school }}
+      {% elif e.ENTRYTYPE == "mastersthesis" %}{{ e.type or "MSc thesis" }}, {{ e.school }}
+      {% elif e.ENTRYTYPE == "techreport" %}{{ e.type or "Technical Report" }} {{ e.number }}, {{ e.institution or e.location }}
+      {% else %}{{ e.journal or e.booktitle or e.publisher or e.institution or e.howpublished or "" }}{% endif %}
+      {% if e.year or e.date %} · {{ e.year or e.date }}<meta itemprop="datePublished" content="{{ e.year or e.date }}">{% endif %}
+      {% if e._doi_url and e.url %} · <a href="{{ e._doi_url }}">DOI {{ e.doi }}</a>{% endif %}
+      {% if e.doi %}<meta itemprop="identifier" content="{{ e.doi }}">{% endif %}
+      {% if e.note %} · {{ e.note }}{% endif %}
+    </span>
+  </div>
+</div>
+{% endfor %}
+{% endif %}
 
 <footer>
   <small>Generated {{ generated }}</small>
