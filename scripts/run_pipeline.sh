@@ -242,6 +242,39 @@ name = data.get("basics", {}).get("name", "Publications")
 print(esc(str(name)))
 PY
 )"
+publications_label="$(
+  python - "$json_file" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+def esc(s: str) -> str:
+    rep = {
+        "\\": r"\textbackslash{}",
+        "{": r"\{",
+        "}": r"\}",
+        "#": r"\#",
+        "$": r"\$",
+        "%": r"\%",
+        "&": r"\&",
+        "_": r"\_",
+        "^": r"\^{}",
+        "~": r"\~{}",
+    }
+    return "".join(rep.get(ch, ch) for ch in s)
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+label = (
+    data.get("meta", {})
+    .get("themeOptions", {})
+    .get("sectionLabels", {})
+    .get("publications", "Publications")
+)
+if not isinstance(label, str) or not label.strip():
+    label = "Publications"
+print(esc(label.strip()))
+PY
+)"
 
 pubs_url_display="${pubs_url#https://}"
 pubs_url_display="${pubs_url_display#http://}"
@@ -363,9 +396,9 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
   cp -a "$pubs_assets_dir"/. "$pubs_work_dir"
 
   if [[ -n "$pubs_url" ]]; then
-    footer_center="${resume_name}~~~·~~~Publications\\\\\\textup{\\tiny Online at \\href{${pubs_url}}{\\nolinkurl{${pubs_url_display}}}}"
+    footer_center="${resume_name}~~~·~~~${publications_label}\\\\\\textup{\\tiny Online at \\href{${pubs_url}}{\\nolinkurl{${pubs_url_display}}}}"
   else
-    footer_center="${resume_name}~~~·~~~Publications"
+    footer_center="${resume_name}~~~·~~~${publications_label}"
   fi
 
   cat > "$pubs_work_dir/$pubs_tex_name" <<LATEX
@@ -384,12 +417,12 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
 \setbool{acvSectionColorHighlight}{false}
 \colorizelinks[awesome-skyblue]
 \hypersetup{
- pdftitle={Publications},
+ pdftitle={$publications_label},
  pdflang={English}}
 \begin{document}
 \makecvfooter{\today}{$footer_center}{\thepage}
 \cvsubsection{$resume_name}
-\cvsection{Publications}
+\cvsection{$publications_label}
 \label{publications}
 \nocite{*}
 LATEX

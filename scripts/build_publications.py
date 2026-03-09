@@ -164,6 +164,27 @@ def load_resume_name() -> str:
         return "Publications"
 
 
+def load_publications_label() -> str:
+    if not PUBS_RESUME_JSON:
+        return "Publications"
+    path = Path(PUBS_RESUME_JSON)
+    if not path.exists():
+        return "Publications"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        label = (
+            data.get("meta", {})
+            .get("themeOptions", {})
+            .get("sectionLabels", {})
+            .get("publications")
+        )
+        if isinstance(label, str) and label.strip():
+            return label.strip()
+    except Exception:
+        return "Publications"
+    return "Publications"
+
+
 def load_publications_options() -> dict:
     if not PUBS_RESUME_JSON:
         return {}
@@ -491,6 +512,7 @@ def main():
         section_order=section_order,
         section_titles=section_titles,
         sectioning_enabled=sectioning_enabled,
+        publications_label=load_publications_label(),
         toc_sections=non_empty_sections,
         generated=datetime.now(UTC).strftime("%Y-%m-%d"),
         dev_reload=dev_reload,

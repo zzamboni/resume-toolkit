@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="author" content="{{ resume_name }}">
-  <meta name="description" content="Publications">
+  <meta name="description" content="{{ publications_label }}">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Publications</title>
+  <title>{{ publications_label }}</title>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato:400,700&display=swap">
   {# Inline SVG icons are used for floating links; no external icon CSS needed. #}
 {# Floating links configuration (edit this list as needed) #}
@@ -352,19 +352,19 @@ footer {
 
   <a href="/vita/">Curriculum Vitae</a>
   <span class="sep">›</span>
-  <span>{{ resume_name }} &mdash; Publications</span>
+  <span>{{ resume_name }} &mdash; {{ publications_label }}</span>
 </nav>
 
 <div>
 <h1 id="top">{{ resume_name }}</h1>
-<h2>Publications</h2>
+<h2>{{ publications_label }}</h2>
 </div>
 
 {% if sectioning_enabled and toc_sections %}
 <nav class="table-of-contents" aria-label="Table of contents">
   <ul>
     <li>
-      <a href="#top" data-toc-target="top"><b>Publications</b></a>
+      <a href="#top" data-toc-target="top"><b>{{ publications_label }}</b></a>
     </li>
     {% for section in toc_sections %}
     <li>
