@@ -77,6 +77,7 @@ cp "$FIXTURES_DIR/resume-inline-publications-config.json" "$WORK_DIR/fixtures/re
 cp "$FIXTURES_DIR/resume-publications-unsectioned.json" "$WORK_DIR/fixtures/resume-publications-unsectioned.json"
 cp "$FIXTURES_DIR/resume-publications-unsectioned-default.json" "$WORK_DIR/fixtures/resume-publications-unsectioned-default.json"
 cp "$FIXTURES_DIR/resume-publications-custom-sections.json" "$WORK_DIR/fixtures/resume-publications-custom-sections.json"
+cp "$FIXTURES_DIR/resume-publications-custom-label.json" "$WORK_DIR/fixtures/resume-publications-custom-label.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 
 run_wrapper() {
@@ -147,5 +148,12 @@ run_wrapper build fixtures/resume-publications-custom-sections.json --out build/
 assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
+
+echo "==> Test 10: custom publications label"
+run_wrapper build fixtures/resume-publications-custom-label.json --out build/out-custom-label >/dev/null
+assert_file "$WORK_DIR/build/out-custom-label/vita/publications/index.html"
+assert_file "$WORK_DIR/build/out-custom-label/vita/publications/resume-publications-custom-label-pubs.pdf"
+assert_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Research Output'
+assert_not_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Example Person &mdash; Publications'
 
 echo "All container tests passed."
