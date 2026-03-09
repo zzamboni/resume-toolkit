@@ -119,52 +119,6 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
 
 `bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
 
-If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the aggregated publications list directly using Typst's `#cv-publication(...)` support. HTML publications generation is unchanged.
-
--   If `"inline_in_pdf": true`, defaults are used:
-    -   `ref-style: "ieee"`
-    -   `ref-full: true`
-    -   `key-list: []`
--   You can also pass a dictionary, and its keys/values are forwarded to `cv-publication(...)`, for example:
-
-```json
-"meta": {
-  "publicationsOptions": {
-    "inline_in_pdf": {
-      "ref-style": "ieee",
-      "ref-full": true,
-      "key-list": []
-    }
-  }
-}
-```
-
-You can also configure publication sectioning for both HTML and PDF via `meta.publicationsOptions`:
-
--   `pubSections: true` (or unset): current default section order and titles
--   `pubSections: ["..."]`: custom section order/selection (matched against BibTeX `keywords`)
--   `pubSections: false`: no sectioning (single publications list)
--   `pubSectionTitles`: optional custom titles for section keys
-
-```json
-"meta": {
-  "publicationsOptions": {
-    "bibfiles": ["pubs.bib", "patents.bib"],
-    "inline_in_pdf": {
-      "ref-style": "ieee",
-      "ref-full": false,
-      "key-list": ["zamboni20:emacs-org-leanpub"]
-    },
-    "pubSections": ["refereed", "patent", "other"],
-    "pubSectionTitles": {
-      "refereed": "Journal Articles",
-      "patent": "Patents",
-      "other": "Other Publications"
-    }
-  }
-}
-```
-
 
 <a id="orgd64b9f2"></a>
 
@@ -229,6 +183,100 @@ You can also call container entrypoint commands directly, for example:
 ```
 
 `tasks` lists the `mise` tasks available inside the container (you can add `--hidden` to see internal tasks), and `shell` gives you an interactive shell inside the container.
+
+<a id="bibliography-config"></a>
+
+## Bibliography configuration
+
+If no BibTeX files are provided on the command line, the pipeline can read them from `meta.publicationsOptions.bibfiles` in your JSON resume:
+
+```json
+"meta": {
+  "publicationsOptions": {
+    "bibfiles": ["pubs.bib", "patents.bib"]
+  }
+}
+```
+
+`bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
+
+By default, publications from bib files are rendered in a separate HTML/PDF document (any publications specified directly within the `publications` list in the JSON file are rendered inline).
+
+If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the aggregated publications list directly using brilliant-cv's `#cv-publication(...)` support. HTML publications generation is unchanged.
+
+-   If `"inline_in_pdf": true`, defaults are used:
+    -   `ref-style: "ieee"`
+    -   `ref-full: true`
+    -   `key-list: []`
+-   You can also pass a dictionary, and its keys/values are forwarded to `cv-publication(...)`, for example:
+
+```json
+"meta": {
+  "publicationsOptions": {
+    "inline_in_pdf": {
+      "ref-style": "ieee",
+      "ref-full": true,
+      "key-list": []
+    }
+  }
+}
+```
+
+You can also configure publication sectioning for both HTML and PDF via `meta.publicationsOptions`:
+
+-   `pubSections: true`: default publication section order and titles (see below)
+-   `pubSections: ["..."]`: custom section order/selection (matched against BibTeX `keywords`)
+-   `pubSections: false` or unset: no sectioning (single publications list)
+-   `pubSectionTitles`: optional custom titles for section keys
+
+If `pubSections` is set to `true`, the following default values are used:
+
+``` python
+DEFAULT_SECTION_ORDER = [
+    "book",
+    "editorial",
+    "thesis",
+    "refereed",
+    "techreport",
+    "presentations",
+    "invited",
+    "patent",
+    "other",
+]
+
+DEFAULT_SECTION_TITLES = {
+    "book": "Books",
+    "editorial": "Editorial Activities",
+    "thesis": "Theses",
+    "refereed": "Refereed Papers",
+    "techreport": "Technical Reports",
+    "presentations": "Presentations",
+    "invited": "Invited Talks and Articles",
+    "patent": "Patents",
+    "other": "Other Publications",
+}
+```
+
+Example:
+
+```json
+"meta": {
+  "publicationsOptions": {
+    "bibfiles": ["pubs.bib", "patents.bib"],
+    "inline_in_pdf": {
+      "ref-style": "ieee",
+      "ref-full": false,
+      "key-list": ["zamboni20:emacs-org-leanpub"]
+    },
+    "pubSections": ["refereed", "patent", "other"],
+    "pubSectionTitles": {
+      "refereed": "Journal Articles",
+      "patent": "Patents",
+      "other": "Other Publications"
+    }
+  }
+}
+```
 
 ## Even theme extensions
 

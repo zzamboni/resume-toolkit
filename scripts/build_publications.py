@@ -182,7 +182,7 @@ def load_publications_options() -> dict:
 
 
 def resolve_sectioning_config(publications_options: dict) -> tuple[bool, list[str], dict[str, str]]:
-    pub_sections = publications_options.get("pubSections", True)
+    pub_sections = publications_options.get("pubSections", False)
 
     if pub_sections is False:
         return False, ["all"], {"all": "Publications"}

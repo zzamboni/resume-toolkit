@@ -146,9 +146,10 @@ fi
 json_dir="$(cd "$(dirname "$json_file")" && pwd)"
 pub_sections_mode="$(jq -r '
   .meta.publicationsOptions.pubSections as $s
-  | if $s == false then "none"
+  | if ($s == false) or ($s == null) then "none"
+    elif $s == true then "default"
     elif ($s | type) == "array" then "custom"
-    else "default"
+    else "none"
     end
 ' "$json_file")"
 

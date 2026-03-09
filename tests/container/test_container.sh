@@ -75,6 +75,7 @@ cp "$FIXTURES_DIR/resume-with-bibfiles.json" "$WORK_DIR/fixtures/resume-with-bib
 cp "$FIXTURES_DIR/resume-inline-publications.json" "$WORK_DIR/fixtures/resume-inline-publications.json"
 cp "$FIXTURES_DIR/resume-inline-publications-config.json" "$WORK_DIR/fixtures/resume-inline-publications-config.json"
 cp "$FIXTURES_DIR/resume-publications-unsectioned.json" "$WORK_DIR/fixtures/resume-publications-unsectioned.json"
+cp "$FIXTURES_DIR/resume-publications-unsectioned-default.json" "$WORK_DIR/fixtures/resume-publications-unsectioned-default.json"
 cp "$FIXTURES_DIR/resume-publications-custom-sections.json" "$WORK_DIR/fixtures/resume-publications-custom-sections.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 
@@ -134,7 +135,14 @@ assert_file "$WORK_DIR/build/out-unsectioned/vita/publications/resume-publicatio
 assert_contains "$WORK_DIR/build/out-unsectioned/vita/publications/index.html" "Example Person"
 assert_not_contains "$WORK_DIR/build/out-unsectioned/vita/publications/index.html" 'h3 id='
 
-echo "==> Test 8: custom publications sections and titles"
+echo "==> Test 8: default unsectioned publications output"
+run_wrapper build fixtures/resume-publications-unsectioned-default.json --out build/out-unsectioned-default >/dev/null
+assert_file "$WORK_DIR/build/out-unsectioned-default/vita/publications/index.html"
+assert_file "$WORK_DIR/build/out-unsectioned-default/vita/publications/resume-publications-unsectioned-default-pubs.pdf"
+assert_contains "$WORK_DIR/build/out-unsectioned-default/vita/publications/index.html" "Example Person"
+assert_not_contains "$WORK_DIR/build/out-unsectioned-default/vita/publications/index.html" 'h3 id='
+
+echo "==> Test 9: custom publications sections and titles"
 run_wrapper build fixtures/resume-publications-custom-sections.json --out build/out-custom-sections >/dev/null
 assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
