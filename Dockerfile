@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 FROM base AS runtime
 ENV XDG_CACHE_HOME=/opt/vita-cache
-ENV TECTONIC_CACHE_DIR=/opt/vita-cache/tectonic
 ENV MISE_DATA_DIR=/opt/vita-cache/mise
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
@@ -30,19 +29,6 @@ RUN cd /tmp \
   && install -m 0755 typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst \
   && rm -rf /tmp/typst.tar.xz /tmp/typst-x86_64-unknown-linux-musl
 
-RUN cd /tmp \
-  && curl --proto '=https' --tlsv1.2 -fsSL https://drop-sh.fullyjustified.net | sh \
-  && install -m 0755 /tmp/tectonic /usr/local/bin/tectonic \
-  && rm -f /tmp/tectonic
-
-RUN cd /tmp \
-    && curl --proto '=https' --tlsv1.2 -fsSLo biber.tar.gz \
-       'https://sourceforge.net/projects/biblatex-biber/files/biblatex-biber/2.17/binaries/Linux/biber-linux_x86_64.tar.gz' \
-    && tar -xzf biber.tar.gz \
-    && chmod +x biber \
-    && cp biber /usr/bin/biber \
-    && rm -f /tmp/biber.tar.gz /tmp/biber
-
 RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
 
 WORKDIR /opt/vita-toolkit
@@ -52,51 +38,42 @@ RUN mkdir -p /opt/vita-cache \
 
 RUN mkdir -p /usr/local/share/fonts
 COPY fonts/ /usr/local/share/fonts/
-COPY pubs-assets/ ./pubs-assets/
 RUN fc-cache -f
 
 FROM runtime AS prewarm
 
 ARG PREWARM_CACHE=0
 RUN if [ "$PREWARM_CACHE" = "1" ]; then \
-      mkdir -p "$TECTONIC_CACHE_DIR" /tmp/tectonic-prime/fonts \
-      && cp /opt/vita-toolkit/pubs-assets/awesome-cv.cls /tmp/tectonic-prime/ \
-      && cp -a /opt/vita-toolkit/pubs-assets/fonts/. /tmp/tectonic-prime/fonts/ \
+      mkdir -p /tmp/typst-prime \
       && printf '%s\n' \
         '@article{prime-entry,' \
         '  title={Prime},' \
         '  author={Prime, Example},' \
         '  journal={Prime Journal},' \
         '  year={2024},' \
-        '  keyword={other}' \
-        '}' > /tmp/tectonic-prime/publications.bib \
+        '  keywords={other}' \
+        '}' > /tmp/typst-prime/publications.bib \
       && printf '%s\n' \
-        '\documentclass[12pt,a4paper]{awesome-cv}' \
-        '\usepackage[defernumbers=true,style=numeric,sorting=ydnt,backend=biber]{biblatex}' \
-        '\addbibresource{publications.bib}' \
-        '\defbibheading{cvbibsection}[\bibname]{\cvsubsection{#1}}' \
-        '\renewcommand*{\bodyfontlight}{\sourcesanspro}' \
-        '\renewcommand*{\bibfont}{\paragraphstyle}' \
-        '\renewcommand*{\entrylocationstyle}[1]{{\fontsize{10pt}{1em}\bodyfontlight\slshape\color{awesome} #1}}' \
-        '\renewcommand*{\subsectionstyle}{\entrytitlestyle}' \
-        '\renewcommand*{\headerquotestyle}[1]{{\fontsize{8pt}{1em}\bodyfont #1}}' \
-        '\fontdir[fonts/]' \
-        '\colorlet{awesome}{awesome-concrete}' \
-        '\colorizelinks[awesome-skyblue]' \
-        '\begin{document}' \
-        '\makecvfooter{\today}{Prime Author~~~·~~~Publications\\\textup{\tiny Online at \href{https://example.invalid/vita/publications}{\nolinkurl{example.invalid/vita/publications}}}}{\thepage}' \
-        '\cvsubsection{Prime Author}' \
-        '{\tiny\ttfamily warm-cache}' \
-        '{\tiny $x$ \small $x$}' \
-        '{\fontsize{9pt}{9pt}\selectfont\ttfamily warm-cache-9pt}' \
-        '{\fontsize{9pt}{9pt}\selectfont $x$}' \
-        '\cvsection{Publications}' \
-        '\nocite{*}' \
-        '\printbibliography[keyword=other, heading=cvbibsection, title=Other Publications]' \
-        '\end{document}' > /tmp/tectonic-prime/publications.tex \
-      && cd /tmp/tectonic-prime && tectonic publications.tex \
-      && (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"') | typst compile - /tmp/tectonic-prime/prime-typst.pdf \
-      && rm -rf /tmp/tectonic-prime; \
+        '#import "@preview/pergamon:0.7.2": *' \
+        '#let has-keyword(keywords, wanted) = {' \
+        '  if keywords == none { false } else {' \
+        '    keywords.split(",").map(s => s.trim()).contains(wanted)' \
+        '  }' \
+        '}' \
+        '#let style = format-citation-numeric()' \
+        '#add-bib-resource(read("publications.bib"))' \
+        '#refsection(format-citation: style.format-citation)[' \
+        '  #print-bibliography(' \
+        '    format-reference: format-reference(reference-label: style.reference-label),' \
+        '    title: "Other Publications",' \
+        '    label-generator: style.label-generator,' \
+        '    show-all: true,' \
+        '    filter: reference => has-keyword(reference.fields.at("keywords", default: none), "other")' \
+        '  )' \
+        ']' > /tmp/typst-prime/publications.typ \
+      && cd /tmp/typst-prime && typst compile publications.typ publications.pdf \
+      && (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"') | typst compile - /tmp/typst-prime/prime-typst.pdf \
+      && rm -rf /tmp/typst-prime; \
     fi \
   && chmod -R a+rwX /opt/vita-cache
 

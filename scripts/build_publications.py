@@ -53,6 +53,66 @@ FA_SVG_DIR = Path("assets/fontawesome")
 _ICON_CACHE = {}
 
 
+def extract_entry_types(bibtex_source: str) -> dict[str, str]:
+    entry_types = {}
+    for match in re.finditer(r"@([A-Za-z][A-Za-z0-9_-]*)\s*\{\s*([^,\s]+)\s*,", bibtex_source):
+        entry_type = match.group(1).lower()
+        entry_key = match.group(2).strip()
+        if entry_key:
+            entry_types[entry_key] = entry_type
+    return entry_types
+
+
+def normalize_bibtex_for_parser(bibtex_source: str) -> str:
+    # bibtexparser rejects @patent even though downstream Typst/pergamon supports it.
+    # Parse it as techreport here, then restore ENTRYTYPE afterwards for rendering/output.
+    return re.sub(r"@patent(\s*\{)", r"@techreport\1", bibtex_source, flags=re.IGNORECASE)
+
+
+def extract_raw_bib_entries(bibtex_source: str) -> dict[str, str]:
+    raw_entries = {}
+    entry_start_re = re.compile(r"@([A-Za-z][A-Za-z0-9_-]*)\s*\{")
+    pos = 0
+
+    while True:
+        match = entry_start_re.search(bibtex_source, pos)
+        if not match:
+            break
+
+        brace_start = match.end() - 1
+        key_start = match.end()
+        key_end = bibtex_source.find(",", key_start)
+        if key_end == -1:
+            pos = match.end()
+            continue
+
+        entry_key = bibtex_source[key_start:key_end].strip()
+        if not entry_key:
+            pos = match.end()
+            continue
+
+        depth = 0
+        end = None
+        for idx in range(brace_start, len(bibtex_source)):
+            ch = bibtex_source[idx]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = idx + 1
+                    break
+
+        if end is None:
+            pos = match.end()
+            continue
+
+        raw_entries[entry_key] = bibtex_source[match.start():end].strip()
+        pos = end
+
+    return raw_entries
+
+
 def normalize_icon_name(icon):
     if not icon:
         return ""
@@ -308,14 +368,11 @@ def clean_bib_entry(entry):
             cleaned[k] = str(v)
     return cleaned
 
-def write_combined_bib(raw_entries, sections, section_order, section_titles, sectioning_enabled):
+def write_combined_bib(raw_entries, raw_entry_text_by_key, sections, section_order, section_titles, sectioning_enabled):
     if not PUBS_OUT_DIR:
         return
     PUBS_OUT_DIR.mkdir(parents=True, exist_ok=True)
     combined_path = PUBS_OUT_DIR / PUBS_BIB_FILENAME
-    raw_by_key = {
-        (e.get("key") or e.get("ID")): e for e in raw_entries if (e.get("key") or e.get("ID"))
-    }
     chunks = []
     if sectioning_enabled:
         for section_key in section_order:
@@ -324,29 +381,24 @@ def write_combined_bib(raw_entries, sections, section_order, section_titles, sec
                 continue
             section_title = section_titles.get(section_key, section_key)
             chunks.append(f"% ====== {section_title} ======\n")
-            section_db = bibtexparser.bibdatabase.BibDatabase()
-            entries_for_section = []
             for e in section_entries:
                 key = e.get("key") or e.get("ID")
                 if not key:
                     continue
-                raw = raw_by_key.get(key, e)
-                entries_for_section.append(clean_bib_entry(raw))
-            section_db.entries = entries_for_section
-            chunks.append(bibtexparser.dumps(section_db).strip())
+                raw_entry_text = raw_entry_text_by_key.get(str(key))
+                if raw_entry_text:
+                    chunks.append(raw_entry_text)
+                    chunks.append("")
             chunks.append("")
     else:
-        section_db = bibtexparser.bibdatabase.BibDatabase()
-        entries_for_section = []
         for e in sections.get("all", []):
             key = e.get("key") or e.get("ID")
             if not key:
                 continue
-            raw = raw_by_key.get(key, e)
-            entries_for_section.append(clean_bib_entry(raw))
-        section_db.entries = entries_for_section
-        chunks.append(bibtexparser.dumps(section_db).strip())
-        chunks.append("")
+            raw_entry_text = raw_entry_text_by_key.get(str(key))
+            if raw_entry_text:
+                chunks.append(raw_entry_text)
+                chunks.append("")
     combined_path.write_text("\n".join(chunks).strip() + "\n")
 
 def group_by_section(entries, section_order, sectioning_enabled):
@@ -378,14 +430,22 @@ def group_by_section(entries, section_order, sectioning_enabled):
 
 def load_bibtex():
     entries = []
+    raw_entry_text_by_key = {}
     for bibfile in sorted(BIB_DIR.glob("*.bib")):
-        with open(bibfile) as f:
-            db = bibtexparser.load(f)
-            for e in db.entries:
-                e["_source"] = bibfile.stem
-                entries.append(e)
-                # print(f"Entry: {e}\n")
-    return entries
+        bibtex_source = bibfile.read_text(encoding="utf-8")
+        entry_types = extract_entry_types(bibtex_source)
+        raw_entry_text_by_key.update(extract_raw_bib_entries(bibtex_source))
+        normalized_source = normalize_bibtex_for_parser(bibtex_source)
+        db = bibtexparser.loads(normalized_source)
+        for e in db.entries:
+            entry_key = e.get("ID") or e.get("key")
+            original_type = entry_types.get(str(entry_key).strip(), "")
+            if original_type:
+                e["ENTRYTYPE"] = original_type
+            e["_source"] = bibfile.stem
+            entries.append(e)
+            # print(f"Entry: {e}\n")
+    return entries, raw_entry_text_by_key
 
 def entry_to_jsonresume_publication(e):
     # JSON Resume "publications" shape: name, publisher, releaseDate, url, summary
@@ -481,10 +541,10 @@ def main():
     publications_options = load_publications_options()
     sectioning_enabled, section_order, section_titles = resolve_sectioning_config(publications_options)
 
-    raw_entries = load_bibtex()
+    raw_entries, raw_entry_text_by_key = load_bibtex()
     entries = normalize(raw_entries, section_order, sectioning_enabled)
     sections = group_by_section(entries, section_order, sectioning_enabled)
-    write_combined_bib(raw_entries, sections, section_order, section_titles, sectioning_enabled)
+    write_combined_bib(raw_entries, raw_entry_text_by_key, sections, section_order, section_titles, sectioning_enabled)
 
     non_empty_sections = [
         s for s in section_order

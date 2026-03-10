@@ -408,6 +408,7 @@ footer {
       {% if e.ENTRYTYPE == "phdthesis" %}{{ e.type or "PhD thesis" }}, {{ e.school }}
       {% elif e.ENTRYTYPE == "mastersthesis" %}{{ e.type or "MSc thesis" }}, {{ e.school }}
       {% elif e.ENTRYTYPE == "techreport" %}{{ e.type or "Technical Report" }} {{ e.number }}, {{ e.institution or e.location }}
+      {% elif e.ENTRYTYPE == "patent" %}{{ e.type or "Patent" }} {{ e.number }}, {{ e.location or e.institution }}
       {% else %}{{ e.journal or e.booktitle or e.publisher or e.institution or e.howpublished or "" }}{% endif %}
       {% if e.year or e.date %} · {{ e.year or e.date }}<meta itemprop="datePublished" content="{{ e.year or e.date }}">{% endif %}
       {% if e._doi_url and e.url %} · <a href="{{ e._doi_url }}">DOI {{ e.doi }}</a>{% endif %}
@@ -446,6 +447,7 @@ footer {
       {% if e.ENTRYTYPE == "phdthesis" %}{{ e.type or "PhD thesis" }}, {{ e.school }}
       {% elif e.ENTRYTYPE == "mastersthesis" %}{{ e.type or "MSc thesis" }}, {{ e.school }}
       {% elif e.ENTRYTYPE == "techreport" %}{{ e.type or "Technical Report" }} {{ e.number }}, {{ e.institution or e.location }}
+      {% elif e.ENTRYTYPE == "patent" %}{{ e.type or "Patent" }} {{ e.number }}, {{ e.location or e.institution }}
       {% else %}{{ e.journal or e.booktitle or e.publisher or e.institution or e.howpublished or "" }}{% endif %}
       {% if e.year or e.date %} · {{ e.year or e.date }}<meta itemprop="datePublished" content="{{ e.year or e.date }}">{% endif %}
       {% if e._doi_url and e.url %} · <a href="{{ e._doi_url }}">DOI {{ e.doi }}</a>{% endif %}

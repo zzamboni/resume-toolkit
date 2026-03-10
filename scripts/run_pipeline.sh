@@ -135,7 +135,7 @@ cv_typ_name="${json_stem}.typ"
 cv_pdf_name="${json_stem}.pdf"
 pubs_base_name="${json_stem}-pubs"
 pubs_bib_name="${pubs_base_name}.bib"
-pubs_tex_name="${pubs_base_name}.tex"
+pubs_typ_name="${pubs_base_name}.typ"
 pubs_pdf_name="${pubs_base_name}.pdf"
 
 if [[ ! -f "$json_file" ]]; then
@@ -242,42 +242,6 @@ name = data.get("basics", {}).get("name", "Publications")
 print(esc(str(name)))
 PY
 )"
-publications_label="$(
-  python - "$json_file" <<'PY'
-import json
-import sys
-from pathlib import Path
-
-def esc(s: str) -> str:
-    rep = {
-        "\\": r"\textbackslash{}",
-        "{": r"\{",
-        "}": r"\}",
-        "#": r"\#",
-        "$": r"\$",
-        "%": r"\%",
-        "&": r"\&",
-        "_": r"\_",
-        "^": r"\^{}",
-        "~": r"\~{}",
-    }
-    return "".join(rep.get(ch, ch) for ch in s)
-
-data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
-label = (
-    data.get("meta", {})
-    .get("themeOptions", {})
-    .get("sectionLabels", {})
-    .get("publications", "Publications")
-)
-if not isinstance(label, str) or not label.strip():
-    label = "Publications"
-print(esc(label.strip()))
-PY
-)"
-
-pubs_url_display="${pubs_url#https://}"
-pubs_url_display="${pubs_url_display#http://}"
 
 out_vita="$out_base/vita"
 out_pubs="$out_vita/publications"
@@ -385,83 +349,30 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
     inline_bib_for_typst="$inline_bib_name"
   fi
 
-  pubs_assets_dir="$toolkit_root/pubs-assets"
-  if [[ ! -f "$pubs_assets_dir/awesome-cv.cls" ]]; then
-    echo "Publications class file not found: $pubs_assets_dir/awesome-cv.cls" >&2
-    exit 1
-  fi
-
-  pubs_work_dir="$pubs_tmp_dir/tex"
-  mkdir -p "$pubs_work_dir"
-  cp -a "$pubs_assets_dir"/. "$pubs_work_dir"
-
-  if [[ -n "$pubs_url" ]]; then
-    footer_center="${resume_name}~~~·~~~${publications_label}\\\\\\textup{\\tiny Online at \\href{${pubs_url}}{\\nolinkurl{${pubs_url_display}}}}"
-  else
-    footer_center="${resume_name}~~~·~~~${publications_label}"
-  fi
-
-  cat > "$pubs_work_dir/$pubs_tex_name" <<LATEX
-\documentclass[12pt,a4paper]{awesome-cv}
-\usepackage[defernumbers=true,style=numeric,sorting=ydnt,backend=biber]{biblatex}
-\addbibresource{$pubs_bib_name}
-\defbibheading{cvbibsection}[\bibname]{\cvsubsection{#1}}
-\renewcommand*{\bodyfontlight}{\sourcesanspro}
-\renewcommand*{\bibfont}{\paragraphstyle}
-\AtBeginBibliography{\raggedright\emergencystretch=1em}
-\renewcommand*{\entrylocationstyle}[1]{{\fontsize{10pt}{1em}\bodyfontlight\slshape\color{awesome} #1}}
-\renewcommand*{\subsectionstyle}{\entrytitlestyle}
-\renewcommand*{\headerquotestyle}[1]{{\fontsize{8pt}{1em}\bodyfont #1}}
-\fontdir[fonts/]
-\colorlet{awesome}{awesome-concrete}
-\setbool{acvSectionColorHighlight}{false}
-\colorizelinks[awesome-skyblue]
-\hypersetup{
- pdftitle={$publications_label},
- pdflang={English}}
-\begin{document}
-\makecvfooter{\today}{$footer_center}{\thepage}
-\cvsubsection{$resume_name}
-\cvsection{$publications_label}
-\label{publications}
-\nocite{*}
-LATEX
-
-  if [[ "$pub_sections_mode" == "none" ]]; then
-    cat >> "$pubs_work_dir/$pubs_tex_name" <<'LATEX'
-\printbibliography[heading=none]
-LATEX
-  else
-    for section in "${pub_sections[@]}"; do
-      section_title="${pub_section_titles[$section]:-$section}"
-      printf '\\printbibliography[keyword=%s, heading=cvbibsection, title=%s]\n' "$section" "{$section_title}" >> "$pubs_work_dir/$pubs_tex_name"
-    done
-  fi
-
-  cat >> "$pubs_work_dir/$pubs_tex_name" <<'LATEX'
-\end{document}
-LATEX
-
-  cp "$agg_bib" "$pubs_work_dir/$pubs_bib_name"
+  pubs_typ="$out_pubs/$pubs_typ_name"
+  python "$toolkit_root/scripts/render_typst_publications.py" \
+    "$json_file" \
+    "$pubs_bib_name" \
+    "$pubs_typ" \
+    "$pubs_url"
 
   pubs_pdf="$out_pubs/$pubs_pdf_name"
   pubs_pdf_hash="$(calc_hash \
     "FILE:$toolkit_root/scripts/run_pipeline.sh" \
+    "FILE:$toolkit_root/scripts/render_typst_publications.py" \
     "FILE:$json_file" \
     "FILE:$agg_bib" \
-    "DIR:$pubs_assets_dir" \
     "STR:resume_name=$resume_name" \
-    "STR:pubs_tex_name=$pubs_tex_name" \
+    "STR:pubs_typ_name=$pubs_typ_name" \
     "STR:pubs_pdf_name=$pubs_pdf_name" \
     "STR:resume_name=$resume_name" \
     "STR:pubs_url=$pubs_url")"
   if needs_rebuild "$pubs_pdf" "$state_dir/pubs-pdf.sha" "$pubs_pdf_hash"; then
     echo "→ Building publications PDF"
     (
-      cd "$pubs_work_dir"
-      tectonic "$pubs_tex_name"
+      cd "$out_pubs"
+      typst compile "$pubs_typ_name" "$pubs_pdf_name"
     )
-    cp "$pubs_work_dir/$pubs_pdf_name" "$pubs_pdf"
     mark_built "$state_dir/pubs-pdf.sha" "$pubs_pdf_hash"
   else
     echo "→ Publications PDF up to date"

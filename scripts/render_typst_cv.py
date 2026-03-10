@@ -86,6 +86,30 @@ DEFAULT_SECTIONS = [
     "references",
 ]
 
+DEFAULT_PUBLICATION_SECTIONS = [
+    "book",
+    "editorial",
+    "thesis",
+    "refereed",
+    "techreport",
+    "presentations",
+    "invited",
+    "patent",
+    "other",
+]
+
+DEFAULT_PUBLICATION_SECTION_TITLES = {
+    "book": "Books",
+    "editorial": "Editorial Activities",
+    "thesis": "Theses",
+    "refereed": "Refereed Papers",
+    "techreport": "Technical Reports",
+    "presentations": "Presentations at Conferences and Workshops",
+    "invited": "Invited Talks and Articles",
+    "patent": "Patents",
+    "other": "Other Publications",
+}
+
 
 def normalize_label(label: str) -> str:
     if not label:
@@ -683,19 +707,59 @@ INLINE_PUBLICATIONS_DEFAULTS: Dict[str, Any] = {
 }
 
 
-def get_inline_publications_config(resume_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Return inline bibliography config from meta.publicationsOptions."""
+def get_publications_options(resume_data: Dict[str, Any]) -> Dict[str, Any]:
     meta = resume_data.get("meta", {})
     if not isinstance(meta, dict):
-        return None
+        return {}
     options = meta.get("publicationsOptions", {})
-    if not isinstance(options, dict):
-        return None
-    inline = options.get("inline_in_pdf")
+    return options if isinstance(options, dict) else {}
+
+
+def get_publications_label(resume_data: Dict[str, Any], fallback: str = "Publications") -> str:
+    label = get_theme_options(resume_data).get("sectionLabels", {}).get("publications", fallback)
+    if not isinstance(label, str) or not label.strip():
+        return fallback
+    return normalize_label(label.strip())
+
+
+def resolve_publications_sectioning(resume_data: Dict[str, Any]) -> tuple[bool, List[str], Dict[str, str]]:
+    options = get_publications_options(resume_data)
+    pub_sections = options.get("pubSections", False)
+
+    if pub_sections is False or pub_sections is None:
+        return False, [], {}
+
+    if isinstance(pub_sections, list):
+        section_order = [str(s).strip() for s in pub_sections if isinstance(s, str) and s.strip()]
+        if not section_order:
+            return False, [], {}
+    else:
+        section_order = list(DEFAULT_PUBLICATION_SECTIONS)
+
+    custom_titles = options.get("pubSectionTitles", {})
+    if not isinstance(custom_titles, dict):
+        custom_titles = {}
+
+    section_titles: Dict[str, str] = {}
+    for section in section_order:
+        title = custom_titles.get(section)
+        if isinstance(title, str) and title.strip():
+            section_titles[section] = title.strip()
+        else:
+            section_titles[section] = DEFAULT_PUBLICATION_SECTION_TITLES.get(section, section)
+
+    return True, section_order, section_titles
+
+
+def get_inline_publications_config(resume_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Return inline bibliography config from meta.publicationsOptions."""
+    inline = get_publications_options(resume_data).get("inline_in_pdf")
     if inline is True:
         return dict(INLINE_PUBLICATIONS_DEFAULTS)
     if isinstance(inline, dict):
-        return dict(inline)
+        merged = dict(INLINE_PUBLICATIONS_DEFAULTS)
+        merged.update(inline)
+        return merged
     return None
 
 
@@ -717,11 +781,218 @@ def to_typst_value(value: Any) -> str:
     return f'"{escape_typst(str(value))}"'
 
 
+def pergamon_style_expr(style_name: Any) -> str:
+    style_key = str(style_name or "ieee").strip().lower()
+    if style_key in {"ieee", "numeric", "numbered"}:
+        return "format-citation-numeric()"
+    if style_key in {"apa", "authoryear", "author-year", "author-date"}:
+        return "format-citation-authoryear()"
+    if style_key in {"alphabetic", "alpha"}:
+        return "format-citation-alphabetic()"
+    return "format-citation-numeric()"
+
+
+def render_pergamon_setup(bib_path: str, config: Dict[str, Any]) -> str:
+    ref_full = bool(config.get("ref-full", True))
+    key_list = config.get("key-list", [])
+    if not isinstance(key_list, list):
+        key_list = []
+    key_list = [str(key) for key in key_list if isinstance(key, str) and key]
+
+    return (
+        '#import "@preview/pergamon:0.7.2": *\n\n'
+        "#let has-keyword(keywords, wanted) = {\n"
+        "  if keywords == none { false } else {\n"
+        "    keywords\n"
+        '      .split(",")\n'
+        "      .map(s => s.trim())\n"
+        "      .contains(wanted)\n"
+        "  }\n"
+        "}\n\n"
+        f"#let publications-style = {pergamon_style_expr(config.get('ref-style'))}\n"
+        f"#let publications-ref-full = {to_typst_value(ref_full)}\n"
+        f"#let publications-key-list = {to_typst_value(key_list)}\n"
+        "#let publications-include(reference) = {\n"
+        "  if publications-ref-full {\n"
+        "    true\n"
+        "  } else {\n"
+        "    publications-key-list.contains(reference.entry_key)\n"
+        "  }\n"
+        "}\n\n"
+        f'#add-bib-resource(read("{escape_typst(bib_path)}"))\n\n'
+    )
+
+
+def iter_bib_entries(bibtex_source: str) -> List[tuple[str, str]]:
+    entries: List[tuple[str, str]] = []
+    entry_start_re = re.compile(r"@([A-Za-z][A-Za-z0-9_-]*)\s*\{")
+    pos = 0
+
+    while True:
+        match = entry_start_re.search(bibtex_source, pos)
+        if not match:
+            break
+
+        brace_start = match.end() - 1
+        key_start = match.end()
+        key_end = bibtex_source.find(",", key_start)
+        if key_end == -1:
+            pos = match.end()
+            continue
+
+        entry_key = bibtex_source[key_start:key_end].strip()
+        if not entry_key:
+            pos = match.end()
+            continue
+
+        depth = 0
+        end = None
+        for idx in range(brace_start, len(bibtex_source)):
+            ch = bibtex_source[idx]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = idx + 1
+                    break
+
+        if end is None:
+            pos = match.end()
+            continue
+
+        entries.append((entry_key, bibtex_source[match.start():end]))
+        pos = end
+
+    return entries
+
+
+def extract_bib_field(raw_entry: str, field_name: str) -> Optional[str]:
+    field_re = re.compile(rf"(^|,)\s*{re.escape(field_name)}\s*=", flags=re.IGNORECASE | re.MULTILINE)
+    match = field_re.search(raw_entry)
+    if not match:
+        return None
+
+    idx = match.end()
+    while idx < len(raw_entry) and raw_entry[idx].isspace():
+        idx += 1
+    if idx >= len(raw_entry):
+        return None
+
+    opener = raw_entry[idx]
+    if opener == "{":
+        depth = 1
+        idx += 1
+        start = idx
+        while idx < len(raw_entry) and depth > 0:
+            ch = raw_entry[idx]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return raw_entry[start:idx]
+            idx += 1
+        return None
+
+    if opener == '"':
+        idx += 1
+        start = idx
+        while idx < len(raw_entry):
+            ch = raw_entry[idx]
+            if ch == '"' and raw_entry[idx - 1] != "\\":
+                return raw_entry[start:idx]
+            idx += 1
+        return None
+
+    start = idx
+    while idx < len(raw_entry) and raw_entry[idx] not in ",\n\r":
+        idx += 1
+    value = raw_entry[start:idx].strip()
+    return value or None
+
+
+def get_nonempty_publication_sections(
+    bib_file_path: Optional[Path],
+    section_order: List[str],
+    config: Dict[str, Any],
+) -> List[str]:
+    if bib_file_path is None or not bib_file_path.exists():
+        return section_order
+
+    try:
+        bibtex_source = bib_file_path.read_text(encoding="utf-8")
+    except OSError:
+        return section_order
+
+    ref_full = bool(config.get("ref-full", True))
+    key_list = config.get("key-list", [])
+    allowed_keys = {str(key) for key in key_list if isinstance(key, str) and key} if not ref_full else None
+    seen_sections = set()
+
+    for entry_key, raw_entry in iter_bib_entries(bibtex_source):
+        if allowed_keys is not None and entry_key not in allowed_keys:
+            continue
+        keywords_raw = extract_bib_field(raw_entry, "keywords")
+        if not keywords_raw:
+            continue
+        keywords = {part.strip().lower() for part in keywords_raw.split(",") if part.strip()}
+        for section in section_order:
+            if section.lower() in keywords:
+                seen_sections.add(section)
+
+    return [section for section in section_order if section in seen_sections]
+
+
+def render_pergamon_bibliography(
+    resume_data: Dict[str, Any],
+    config: Dict[str, Any],
+    include_titles: bool = True,
+    bib_file_path: Optional[Path] = None,
+) -> str:
+    sectioning_enabled, section_order, section_titles = resolve_publications_sectioning(resume_data)
+    bibliography_title = get_publications_label(resume_data)
+    blocks: List[str] = []
+
+    def block(title_expr: str, filter_expr: str) -> str:
+        return (
+            "  #print-bibliography(\n"
+            "    format-reference: format-reference(reference-label: publications-style.reference-label),\n"
+            f"    title: {title_expr},\n"
+            "    label-generator: publications-style.label-generator,\n"
+            "    sorting: \"ydnt\",\n"
+            "    show-all: true,\n"
+            "    resume-after: auto,\n"
+            f"    filter: reference => publications-include(reference){filter_expr}\n"
+            "  )\n"
+        )
+
+    if not sectioning_enabled:
+        title_expr = f'"{escape_typst(bibliography_title)}"' if include_titles else "none"
+        blocks.append(block(title_expr, ""))
+        return "#refsection(format-citation: publications-style.format-citation)[\n" + "".join(blocks) + "]\n\n"
+
+    section_order = get_nonempty_publication_sections(bib_file_path, section_order, config)
+    for section in section_order:
+        title_expr = f'"{escape_typst(section_titles.get(section, section))}"'
+        blocks.append(
+            block(
+                title_expr,
+                f' and has-keyword(reference.fields.at("keywords", default: none), "{escape_typst(section)}")',
+            )
+        )
+    if not blocks:
+        return ""
+    return "#refsection(format-citation: publications-style.format-citation)[\n" + "".join(blocks) + "]\n\n"
+
+
 def render_publications(
+    resume_data: Dict[str, Any],
     publications: List[Dict[str, Any]],
     label: str = "Publications",
     inline_publications_config: Optional[Dict[str, Any]] = None,
     inline_bib_path: Optional[str] = None,
+    inline_bib_file_path: Optional[Path] = None,
 ) -> str:
     """Render publications using brilliant-cv."""
     if not publications:
@@ -733,10 +1004,12 @@ def render_publications(
     )
 
     if inline_bib_path and inline_publications_config is not None:
-        cv_publication_args = [f'bib: bibliography("{escape_typst(inline_bib_path)}")']
-        for key, value in inline_publications_config.items():
-            cv_publication_args.append(f"{key}: {to_typst_value(value)}")
-        output += f'#cv-publication({", ".join(cv_publication_args)})\n\n'
+        output += render_pergamon_bibliography(
+            resume_data,
+            inline_publications_config,
+            include_titles=False,
+            bib_file_path=inline_bib_file_path,
+        )
         return output
 
     for pub in publications:
@@ -827,7 +1100,8 @@ def render_references(references: List[Dict[str, Any]], label: str = "References
 
 
 def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_dir: Path,
-                    source_assets_dir: Path, inline_publications_bib: Optional[str] = None) -> str:
+                    source_assets_dir: Path, inline_publications_bib: Optional[str] = None,
+                    inline_publications_bib_file_path: Optional[Path] = None) -> str:
     """Render resume sections in the desired order."""
     theme_options = get_theme_options(resume_data)
     sections = theme_options.get("sections")
@@ -914,10 +1188,12 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
             continue
         if section == "publications":
             output += render_publications(
+                resume_data,
                 resume_data.get("publications", []),
                 label=label_for("publications", "Publications"),
                 inline_publications_config=inline_publications_config,
                 inline_bib_path=inline_publications_bib,
+                inline_bib_file_path=inline_publications_bib_file_path,
             )
             continue
         if section == "skills":
@@ -951,6 +1227,13 @@ def generate_typst_cv(
     photo_path = None
     if image_url:
         photo_path = download_image(image_url, base_output_dir, assets_dir / "profile")
+    inline_publications_config = get_inline_publications_config(resume_data)
+    inline_publications_bib_file_path: Optional[Path] = None
+    if inline_publications_bib:
+        bib_path = Path(inline_publications_bib)
+        if not bib_path.is_absolute():
+            bib_path = base_output_dir / bib_path
+        inline_publications_bib_file_path = bib_path
 
     # Start with imports and metadata
     output = """// Professional CV generated from JSONResume
@@ -1020,7 +1303,11 @@ def generate_typst_cv(
   )
 }
 
-"""
+    """
+
+    if inline_publications_bib and inline_publications_config is not None:
+        output += render_pergamon_setup(inline_publications_bib, inline_publications_config)
+        output += "\n"
 
     # Add metadata
     output += generate_metadata(basics)
@@ -1058,6 +1345,7 @@ def generate_typst_cv(
         assets_dir,
         source_assets_dir,
         inline_publications_bib=inline_publications_bib,
+        inline_publications_bib_file_path=inline_publications_bib_file_path,
     )
 
     return output

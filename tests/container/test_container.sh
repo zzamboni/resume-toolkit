@@ -121,13 +121,21 @@ run_wrapper build fixtures/resume-inline-publications.json --out build/out-inlin
 assert_file "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ"
 assert_file "$WORK_DIR/build/out-inline/vita/resume-inline-publications-vita.bib"
 assert_file "$WORK_DIR/build/out-inline/vita/publications/index.html"
-assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#cv-publication\(bib: bibliography\("resume-inline-publications-vita\.bib"\), ref-style: "ieee", ref-full: true, key-list: \(\)\)'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#import "@preview/pergamon:0\.7\.2": \*'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#add-bib-resource\(read\("resume-inline-publications-vita\.bib"\)\)'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#let publications-style = format-citation-numeric\(\)'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#let publications-ref-full = true'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#let publications-key-list = \(\)'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" 'title: none,'
+assert_not_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#cv-publication\('
 
 echo "==> Test 6: inline publications with custom bibliography options"
 run_wrapper build fixtures/resume-inline-publications-config.json --out build/out-inline-config >/dev/null
 assert_file "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ"
 assert_file "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config-vita.bib"
-assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#cv-publication\(bib: bibliography\("resume-inline-publications-config-vita\.bib"\), ref-style: "apa", ref-full: false, key-list: \("example2024paper",\)\)'
+assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#let publications-style = format-citation-authoryear\(\)'
+assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#let publications-ref-full = false'
+assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#let publications-key-list = \("example2024paper",\)'
 
 echo "==> Test 7: unsectioned publications output"
 run_wrapper build fixtures/resume-publications-unsectioned.json --out build/out-unsectioned >/dev/null

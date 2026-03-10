@@ -20,7 +20,7 @@ This project provides a reusable build pipeline for generating:
 -   Resume HTML (from JSON Resume, using a customized version of [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even))
 -   Resume PDF (from Typst generated from JSON Resume and using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) Typst template)
 -   Publications HTML (from BibTeX)
--   Publications PDF (from LaTeX/BibTeX, using [AwesomeCV](https://github.com/posquit0/Awesome-CV), so it looks the same as the resume PDF)
+-   Publications PDF (from BibTeX, rendered with Typst using the [pergamon](https://typst.app/universe/package/pergamon) bibliography package)
 -   Aggregated publications BibTeX
 
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
@@ -202,13 +202,13 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
 
 By default, publications from bib files are rendered in a separate HTML/PDF document (any publications specified directly within the `publications` list in the JSON file are rendered inline).
 
-If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the aggregated publications list directly using brilliant-cv's `#cv-publication(...)` support. HTML publications generation is unchanged.
+If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the aggregated publications list directly using Typst and the `pergamon` bibliography package. HTML publications generation is unchanged.
 
 -   If `"inline_in_pdf": true`, defaults are used:
     -   `ref-style: "ieee"`
     -   `ref-full: true`
     -   `key-list: []`
--   You can also pass a dictionary, and its keys/values are forwarded to `cv-publication(...)`, for example:
+-   You can also pass a dictionary to configure the inline bibliography rendering, for example:
 
 ```json
 "meta": {
@@ -228,6 +228,8 @@ You can also configure publication sectioning for both HTML and PDF via `meta.pu
 -   `pubSections: ["..."]`: custom section order/selection (matched against BibTeX `keywords`)
 -   `pubSections: false` or unset: no sectioning (single publications list)
 -   `pubSectionTitles`: optional custom titles for section keys
+
+The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
 
 If `pubSections` is set to `true`, the following default values are used:
 
