@@ -10,14 +10,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgraphite2-3 \
     fonts-roboto \
     ca-certificates \
-    curl \
-    xz-utils \
     jq \
   && rm -rf /var/lib/apt/lists/*
 
-FROM base AS runtime
-ENV XDG_CACHE_HOME=/opt/vita-cache
-ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+FROM base AS downloader
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    xz-utils \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN cd /tmp \
   && curl --proto '=https' --tlsv1.2 -fsSLo typst.tar.xz \
@@ -32,6 +33,13 @@ RUN cd /tmp \
   && tar -xJf watchexec.tar.xz \
   && install -m 0755 watchexec-2.5.0-x86_64-unknown-linux-musl/watchexec /usr/local/bin/watchexec \
   && rm -rf /tmp/watchexec.tar.xz /tmp/watchexec-2.5.0-x86_64-unknown-linux-musl
+
+FROM base AS runtime
+ENV XDG_CACHE_HOME=/opt/vita-cache
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
+
+COPY --from=downloader /usr/local/bin/typst /usr/local/bin/typst
+COPY --from=downloader /usr/local/bin/watchexec /usr/local/bin/watchexec
 
 WORKDIR /opt/vita-toolkit
 
