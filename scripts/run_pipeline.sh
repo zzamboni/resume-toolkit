@@ -282,7 +282,7 @@ fi
 
 # Optional dev autoreload snippet injection (enabled by DEV_RELOAD=1)
 if [[ "${DEV_RELOAD:-0}" == "1" ]] && [[ -f "$cv_html" ]] && ! grep -q "__reload" "$cv_html"; then
-  perl -0777 -pe 's~</body>~\n<script>\n(() => {\n  const self = new URL(location.href);\n  self.searchParams.set("__reload", Date.now().toString());\n  let lastModified = null;\n  async function check() {\n    try {\n      const res = await fetch(self.toString(), { cache: "no-store" });\n      const lm = res.headers.get("last-modified") || null;\n      if (lastModified === null) { lastModified = lm; return; }\n      if (lm && lastModified && lm !== lastModified) location.reload();\n    } catch (e) {}\n  }\n  setInterval(check, 800);\n})();\n</script>\n</body>~s' -i "$cv_html"
+  python "$toolkit_root/scripts/inject_dev_reload.py" "$cv_html"
 fi
 
 if [[ ${#bib_files[@]} -gt 0 ]]; then
@@ -331,7 +331,7 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
       python scripts/build_publications.py
       # Optional dev autoreload snippet injection (enabled by DEV_RELOAD=1)
       if [[ "${DEV_RELOAD:-0}" == "1" ]] && [[ -f "$pubs_html" ]] && ! grep -q "__reload" "$pubs_html"; then
-        perl -0777 -pe 's~</body>~\n<script>\n(() => {\n  const self = new URL(location.href);\n  self.searchParams.set("__reload", Date.now().toString());\n  let lastModified = null;\n  async function check() {\n    try {\n      const res = await fetch(self.toString(), { cache: "no-store" });\n      const lm = res.headers.get("last-modified") || null;\n      if (lastModified === null) { lastModified = lm; return; }\n      if (lm && lastModified && lm !== lastModified) location.reload();\n    } catch (e) {}\n  }\n  setInterval(check, 800);\n})();\n</script>\n</body>~s' -i "$pubs_html"
+        python "$toolkit_root/scripts/inject_dev_reload.py" "$pubs_html"
       fi
     )
     mark_built "$state_dir/pubs-html.sha" "$pubs_html_hash"

@@ -1,24 +1,25 @@
-FROM node:24-bookworm-slim AS base
+FROM node:24-alpine AS base
 
 USER root
-ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
+    bash \
     python3 \
-    python3-venv \
+    py3-pip \
+    py3-virtualenv \
     fontconfig \
-    libgraphite2-3 \
-    fonts-roboto \
+    graphite2 \
+    font-roboto \
     ca-certificates \
     jq \
-  && rm -rf /var/lib/apt/lists/*
+    coreutils \
+    findutils
 
 FROM base AS downloader
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apk add --no-cache \
     curl \
-    xz-utils \
-  && rm -rf /var/lib/apt/lists/*
+    xz
 
 RUN cd /tmp \
   && curl --proto '=https' --tlsv1.2 -fsSLo typst.tar.xz \
@@ -46,9 +47,9 @@ WORKDIR /opt/vita-toolkit
 RUN mkdir -p /opt/vita-cache \
   && chmod -R a+rwx /opt/vita-cache
 
-RUN mkdir -p /usr/local/share/fonts
-COPY fonts/ /usr/local/share/fonts/
-RUN fc-cache -f
+RUN mkdir -p /usr/share/fonts
+COPY fonts/ /usr/share/fonts/
+RUN fc-cache -f /usr/share/fonts
 
 FROM runtime AS theme-builder
 
