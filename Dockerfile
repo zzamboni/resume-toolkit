@@ -40,6 +40,19 @@ RUN mkdir -p /usr/local/share/fonts
 COPY fonts/ /usr/local/share/fonts/
 RUN fc-cache -f
 
+FROM runtime AS theme-builder
+
+WORKDIR /tmp/jsonresume-theme-even
+
+COPY themes/jsonresume-theme-even/ ./
+
+RUN if [ -f package-lock.json ]; then \
+      npm ci --ignore-scripts; \
+    else \
+      npm install --ignore-scripts; \
+    fi \
+  && NPM_CONFIG_IGNORE_SCRIPTS=false npm run build
+
 FROM runtime AS prewarm
 
 ARG PREWARM_CACHE=0
@@ -52,12 +65,16 @@ RUN if [ "$PREWARM_CACHE" = "1" ]; then \
   && chmod -R a+rwX /opt/vita-cache
 
 COPY mise.toml requirements.txt package.json package-lock.json ./
-COPY themes/jsonresume-theme-even/ ./themes/jsonresume-theme-even/
+COPY --from=theme-builder /tmp/jsonresume-theme-even/package.json ./themes/jsonresume-theme-even/package.json
+COPY --from=theme-builder /tmp/jsonresume-theme-even/bin ./themes/jsonresume-theme-even/bin
+COPY --from=theme-builder /tmp/jsonresume-theme-even/dist ./themes/jsonresume-theme-even/dist
 
 RUN mise trust /opt/vita-toolkit/mise.toml \
   && mise install \
-  && HUSKY=0 NPM_CONFIG_IGNORE_SCRIPTS=true mise run bootstrap \
-  && npm cache clean --force
+  && mise x -- uv pip sync requirements.txt \
+  && HUSKY=0 npm ci --omit=dev --ignore-scripts \
+  && npm cache clean --force \
+  && rm -rf /opt/vita-cache/tectonic /opt/vita-cache/Tectonic /root/.npm /tmp/*
 
 FROM prewarm AS final
 
