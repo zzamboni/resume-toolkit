@@ -33,7 +33,7 @@ USAGE
 # Harmonize with container entrypoint commands.
 ENTRYPOINT_CMDS=(
   build pipeline shell bash
-  run tasks trust install exec x watch which where settings doctor version help
+  tasks version help
   fetch-logos update-certs update-pub-numbers
 )
 

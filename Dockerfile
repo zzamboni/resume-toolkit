@@ -17,7 +17,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 FROM base AS runtime
 ENV XDG_CACHE_HOME=/opt/vita-cache
-ENV MISE_DATA_DIR=/opt/vita-cache/mise
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
 RUN cd /tmp \
@@ -27,7 +26,12 @@ RUN cd /tmp \
   && install -m 0755 typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst \
   && rm -rf /tmp/typst.tar.xz /tmp/typst-x86_64-unknown-linux-musl
 
-RUN curl https://mise.run | MISE_INSTALL_PATH=/usr/local/bin/mise sh
+RUN cd /tmp \
+  && curl --proto '=https' --tlsv1.2 -fsSLo watchexec.tar.xz \
+    https://github.com/watchexec/watchexec/releases/download/v2.5.0/watchexec-2.5.0-x86_64-unknown-linux-musl.tar.xz \
+  && tar -xJf watchexec.tar.xz \
+  && install -m 0755 watchexec-2.5.0-x86_64-unknown-linux-musl/watchexec /usr/local/bin/watchexec \
+  && rm -rf /tmp/watchexec.tar.xz /tmp/watchexec-2.5.0-x86_64-unknown-linux-musl
 
 WORKDIR /opt/vita-toolkit
 
@@ -62,14 +66,14 @@ RUN if [ "$PREWARM_CACHE" = "1" ]; then \
     fi \
   && chmod -R a+rwX /opt/vita-cache
 
-COPY mise.toml requirements.txt package.json package-lock.json ./
+COPY requirements.txt package.json package-lock.json ./
 COPY --from=theme-builder /tmp/jsonresume-theme-even/package.json ./themes/jsonresume-theme-even/package.json
 COPY --from=theme-builder /tmp/jsonresume-theme-even/bin ./themes/jsonresume-theme-even/bin
 COPY --from=theme-builder /tmp/jsonresume-theme-even/dist ./themes/jsonresume-theme-even/dist
 
-RUN mise trust /opt/vita-toolkit/mise.toml \
-  && mise install \
-  && mise x -- uv pip sync requirements.txt \
+RUN python3 -m venv /opt/vita-toolkit/.venv \
+  && /opt/vita-toolkit/.venv/bin/pip install --no-cache-dir --upgrade pip \
+  && /opt/vita-toolkit/.venv/bin/pip install --no-cache-dir -r requirements.txt \
   && HUSKY=0 npm ci --omit=dev --ignore-scripts \
   && npm cache clean --force \
   && rm -rf /opt/vita-cache/tectonic /opt/vita-cache/Tectonic /root/.npm /tmp/*
