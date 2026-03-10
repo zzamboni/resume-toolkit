@@ -109,6 +109,7 @@ case "$1" in
     run_pipeline_via_mise "$@"
     ;;
   shell|bash)
+    cd "$VITA_TOOLKIT_ROOT"
     exec mise x -- bash "${@:2}"
     ;;
   run|tasks|trust|install|exec|x|watch|which|where|settings|doctor|version|help)

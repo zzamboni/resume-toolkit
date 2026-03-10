@@ -45,34 +45,8 @@ FROM runtime AS prewarm
 ARG PREWARM_CACHE=0
 RUN if [ "$PREWARM_CACHE" = "1" ]; then \
       mkdir -p /tmp/typst-prime \
-      && printf '%s\n' \
-        '@article{prime-entry,' \
-        '  title={Prime},' \
-        '  author={Prime, Example},' \
-        '  journal={Prime Journal},' \
-        '  year={2024},' \
-        '  keywords={other}' \
-        '}' > /tmp/typst-prime/publications.bib \
-      && printf '%s\n' \
-        '#import "@preview/pergamon:0.7.2": *' \
-        '#let has-keyword(keywords, wanted) = {' \
-        '  if keywords == none { false } else {' \
-        '    keywords.split(",").map(s => s.trim()).contains(wanted)' \
-        '  }' \
-        '}' \
-        '#let style = format-citation-numeric()' \
-        '#add-bib-resource(read("publications.bib"))' \
-        '#refsection(format-citation: style.format-citation)[' \
-        '  #print-bibliography(' \
-        '    format-reference: format-reference(reference-label: style.reference-label),' \
-        '    title: "Other Publications",' \
-        '    label-generator: style.label-generator,' \
-        '    show-all: true,' \
-        '    filter: reference => has-keyword(reference.fields.at("keywords", default: none), "other")' \
-        '  )' \
-        ']' > /tmp/typst-prime/publications.typ \
-      && cd /tmp/typst-prime && typst compile publications.typ publications.pdf \
-      && (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"') | typst compile - /tmp/typst-prime/prime-typst.pdf \
+      && cd /tmp/typst-prime \
+      && (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"; echo "#import "@preview/pergamon:0.7.2": *') | typst compile - /tmp/typst-prime/prime-typst.pdf \
       && rm -rf /tmp/typst-prime; \
     fi \
   && chmod -R a+rwX /opt/vita-cache
