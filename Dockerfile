@@ -1,5 +1,10 @@
 FROM node:24-alpine AS base
 
+ARG VITA_TOOLKIT_VERSION=dev
+LABEL org.opencontainers.image.title="resume-toolkit"
+LABEL org.opencontainers.image.version="${VITA_TOOLKIT_VERSION}"
+ENV VITA_TOOLKIT_VERSION="${VITA_TOOLKIT_VERSION}"
+
 USER root
 
 RUN apk add --no-cache \
@@ -75,7 +80,7 @@ RUN if [ "$PREWARM_CACHE" = "1" ]; then \
     fi \
   && chmod -R a+rwX /opt/vita-cache
 
-COPY requirements.txt package.json package-lock.json ./
+COPY VERSION requirements.txt package.json package-lock.json ./
 COPY --from=theme-builder /tmp/jsonresume-theme-even/package.json ./themes/jsonresume-theme-even/package.json
 COPY --from=theme-builder /tmp/jsonresume-theme-even/bin ./themes/jsonresume-theme-even/bin
 COPY --from=theme-builder /tmp/jsonresume-theme-even/dist ./themes/jsonresume-theme-even/dist

@@ -14,6 +14,7 @@ Usage:
   vita-pipeline update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   vita-pipeline update-pub-numbers <resume.json> [--html <path>]
   vita-pipeline tasks
+  vita-pipeline version
   vita-pipeline shell
 USAGE
 }
@@ -24,6 +25,7 @@ build              Run CV + publications pipeline
 fetch-logos        Fetch company/education logos from JSON resume into /work assets
 update-certs       Update certificates from Credly
 update-pub-numbers Update publication reference numbers in JSON resume
+version            Show toolkit and runtime versions
 TASKS
 }
 
@@ -286,7 +288,18 @@ case "$1" in
     usage
     ;;
   version)
-    python3 --version
+    toolkit_version="${VITA_TOOLKIT_VERSION:-}"
+    if [[ -z "$toolkit_version" || "$toolkit_version" == "dev" || "$toolkit_version" == "unknown" ]]; then
+      if [[ -f "$VITA_TOOLKIT_ROOT/VERSION" ]]; then
+        toolkit_version="$(tr -d '[:space:]' < "$VITA_TOOLKIT_ROOT/VERSION")"
+      else
+        toolkit_version="unknown"
+      fi
+    fi
+    echo "resume-toolkit ${toolkit_version}"
+    echo "node $(node --version)"
+    echo "python $(python3 --version | awk '{print $2}')"
+    echo "typst $(typst --version | awk '{print $2}')"
     ;;
   *)
     echo "Unknown command: $1" >&2

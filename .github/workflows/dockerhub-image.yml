@@ -30,6 +30,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Resolve image version
+        id: version
+        run: |
+          declared_version="$(tr -d '[:space:]' < VERSION)"
+          if [[ "${GITHUB_REF_TYPE}" == "tag" && "${GITHUB_REF_NAME}" == v* ]]; then
+            version="${GITHUB_REF_NAME#v}"
+            if [[ "${version}" != "${declared_version}" ]]; then
+              echo "Release tag ${version} does not match VERSION file ${declared_version}" >&2
+              exit 1
+            fi
+          else
+            version="${declared_version}"
+          fi
+          echo "value=${version}" >> "$GITHUB_OUTPUT"
+
       - name: Build test image (local)
         uses: docker/build-push-action@v6
         with:
@@ -37,6 +52,8 @@ jobs:
           file: ./Dockerfile
           load: true
           tags: ${{ env.LOCAL_TEST_IMAGE }}
+          build-args: |
+            VITA_TOOLKIT_VERSION=${{ steps.version.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -58,6 +75,9 @@ jobs:
           tags: |
             type=ref,event=branch
             type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
 
@@ -68,6 +88,8 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
+          build-args: |
+            VITA_TOOLKIT_VERSION=${{ steps.version.outputs.value }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
