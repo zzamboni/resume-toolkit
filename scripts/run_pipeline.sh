@@ -326,7 +326,55 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
     cp "$bib" "$pubs_tmp_dir/"
   done
 
-  pubs_links_json="$(printf '[{\"name\":\"PDF\",\"url\":\"/vita/publications/%s\",\"icon\":\"file-pdf\"},{\"name\":\"BibTeX\",\"url\":\"/vita/publications/%s\",\"icon\":\"tex\"}]' "$pubs_pdf_name" "$pubs_bib_name")"
+  pubs_links_json="$(
+    python - "$normalized_json" "$pubs_pdf_name" "$pubs_bib_name" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+data = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+pdf_name = sys.argv[2]
+bib_name = sys.argv[3]
+
+default_links = [
+    {"name": "PDF", "url": pdf_name, "icon": "file-pdf"},
+    {"name": "BibTeX", "url": bib_name, "icon": "tex"},
+]
+
+links = (
+    data.get("meta", {})
+    .get("publicationsOptions", {})
+    .get("links", None)
+)
+
+if links is None:
+    result = default_links
+elif isinstance(links, list):
+    result = []
+    for item in links:
+        if not isinstance(item, dict):
+            continue
+        name = item.get("name")
+        url = item.get("url")
+        icon = item.get("icon")
+        if not all(isinstance(v, str) and v.strip() for v in (name, url, icon)):
+            continue
+        replaced_url = (
+            url.replace("<publications>.pdf", pdf_name)
+               .replace("<publications>.bib", bib_name)
+               .replace("<publications>", Path(pdf_name).stem)
+        )
+        result.append({
+            "name": name.strip(),
+            "url": replaced_url.strip(),
+            "icon": icon.strip(),
+        })
+else:
+    result = default_links
+
+print(json.dumps(result, separators=(",", ":")))
+PY
+  )"
 
   pubs_html="$out_pubs/index.html"
   agg_bib="$out_pubs/$pubs_bib_name"

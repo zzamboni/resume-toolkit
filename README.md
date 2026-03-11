@@ -230,6 +230,26 @@ You can also configure publication sectioning for both HTML and PDF via `meta.pu
 -   `pubSections: ["..."]`: custom section order/selection (matched against BibTeX `keywords`)
 -   `pubSections: false` or unset: no sectioning (single publications list)
 -   `pubSectionTitles`: optional custom titles for section keys
+-   `links`: optional floating action links for the publications HTML page
+
+If `meta.publicationsOptions.links` is unset, the publications HTML page gets these default floating links:
+
+```json
+[
+  {
+    "name": "PDF",
+    "url": "<publications>.pdf",
+    "icon": "file-pdf"
+  },
+  {
+    "name": "BibTeX",
+    "url": "<publications>.bib",
+    "icon": "tex"
+  }
+]
+```
+
+`<publications>` is replaced with the generated publications base filename for the current resume. If `links` is present but empty (`[]`), no floating links are rendered.
 
 The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
 
@@ -277,6 +297,18 @@ Example:
       "ref-full": false,
       "key-list": ["zamboni20:emacs-org-leanpub"]
     },
+    "links": [
+      {
+        "name": "PDF",
+        "url": "<publications>.pdf",
+        "icon": "file-pdf"
+      },
+      {
+        "name": "BibTeX",
+        "url": "<publications>.bib",
+        "icon": "tex"
+      }
+    ],
     "pubSections": ["refereed", "patent", "other"],
     "pubSectionTitles": {
       "refereed": "Journal Articles",

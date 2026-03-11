@@ -78,6 +78,8 @@ cp "$FIXTURES_DIR/resume-publications-unsectioned.json" "$WORK_DIR/fixtures/resu
 cp "$FIXTURES_DIR/resume-publications-unsectioned-default.json" "$WORK_DIR/fixtures/resume-publications-unsectioned-default.json"
 cp "$FIXTURES_DIR/resume-publications-custom-sections.json" "$WORK_DIR/fixtures/resume-publications-custom-sections.json"
 cp "$FIXTURES_DIR/resume-publications-custom-label.json" "$WORK_DIR/fixtures/resume-publications-custom-label.json"
+cp "$FIXTURES_DIR/resume-publications-custom-links.json" "$WORK_DIR/fixtures/resume-publications-custom-links.json"
+cp "$FIXTURES_DIR/resume-publications-no-links.json" "$WORK_DIR/fixtures/resume-publications-no-links.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 
 run_wrapper() {
@@ -164,5 +166,16 @@ assert_file "$WORK_DIR/build/out-custom-label/vita/publications/index.html"
 assert_file "$WORK_DIR/build/out-custom-label/vita/publications/resume-publications-custom-label-pubs.pdf"
 assert_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Research Output'
 assert_not_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Example Person &mdash; Publications'
+
+echo "==> Test 11: custom publications floating links"
+run_wrapper build fixtures/resume-publications-custom-links.json --out build/out-custom-links >/dev/null
+assert_file "$WORK_DIR/build/out-custom-links/vita/publications/index.html"
+assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.pdf"'
+assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.bib"'
+
+echo "==> Test 12: publications floating links disabled"
+run_wrapper build fixtures/resume-publications-no-links.json --out build/out-no-links >/dev/null
+assert_file "$WORK_DIR/build/out-no-links/vita/publications/index.html"
+assert_not_contains "$WORK_DIR/build/out-no-links/vita/publications/index.html" '<nav class="floating-links"'
 
 echo "All container tests passed."

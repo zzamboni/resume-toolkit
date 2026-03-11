@@ -1,0 +1,32 @@
+{
+  "basics": {
+    "name": "Example Person",
+    "label": "Software Engineer",
+    "email": "example@example.com",
+    "url": "https://example.com"
+  },
+  "work": [
+    {
+      "name": "Example Corp",
+      "position": "Engineer",
+      "startDate": "2020-01-01",
+      "summary": "Built useful systems."
+    }
+  ],
+  "publications": [
+    {
+      "authors": [
+        "Example Person"
+      ],
+      "bibfiles": [
+        "publications.bib"
+      ]
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even",
+    "publicationsOptions": {
+      "links": []
+    }
+  }
+}
