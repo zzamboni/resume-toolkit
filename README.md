@@ -19,18 +19,19 @@
 
 This project provides a reusable build pipeline for generating:
 
--   Resume HTML (from JSON Resume, using a customized version of [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even))
+-   Resume HTML (from [JSON Resume](https://jsonresume.org/) source, using a customized version of [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even))
 -   Resume PDF (from Typst generated from JSON Resume and using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) Typst template)
 -   Publications HTML (from BibTeX)
 -   Publications PDF (from BibTeX, rendered with Typst using the [pergamon](https://typst.app/universe/package/pergamon) bibliography package)
 -   Aggregated publications BibTeX
 
-The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
 
 
 <a id="orge0cfd3e"></a>
 
 ## Requirements and installation
+
+The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
 
 -   Docker
 -   A file in [JSON Resume](https://jsonresume.org/) format
@@ -433,14 +434,14 @@ The table of contents automatically includes links to all resume sections that h
 
 ### Floating links
 
-You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` name is looked up in FontAwesome.
+You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` value can be a plain Font Awesome name like `github`, or a Font Awesome class-style string such as `fa-regular fa-file-pdf` or `fa-brands fa-github`. In the `url` field, `<resume>` is replaced with the current resume file stem before rendering.
 
 ```json
 {
   "meta": {
     "themeOptions": {
       "links": [
-        { "name": "PDF", "url": "/vita/zamboni-vita.pdf", "icon": "file-pdf" },
+        { "name": "PDF", "url": "/vita/<resume>.pdf", "icon": "file-pdf" },
         { "name": "GitHub", "url": "https://github.com/zzamboni", "icon": "github" }
       ]
     }

@@ -154,6 +154,8 @@ def esc_latex(text: str) -> str:
 
 def normalize_resume(src: Path, dst: Path) -> dict:
     data = json.loads(src.read_text(encoding="utf-8"))
+    resume_stem = src.stem
+
     publications = data.get("publications")
     if isinstance(publications, list):
         bib_entries = [
@@ -170,6 +172,18 @@ def normalize_resume(src: Path, dst: Path) -> dict:
                 entry["name"] = "Full list online"
             if not isinstance(entry.get("url"), str) or not entry.get("url", "").strip():
                 entry["url"] = "publications/"
+
+    theme_options = data.get("meta", {}).get("themeOptions", {})
+    if isinstance(theme_options, dict):
+        links = theme_options.get("links")
+        if isinstance(links, list):
+            for link in links:
+                if not isinstance(link, dict):
+                    continue
+                url = link.get("url")
+                if isinstance(url, str):
+                    link["url"] = url.replace("<resume>", resume_stem)
+
     dst.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return data
 
