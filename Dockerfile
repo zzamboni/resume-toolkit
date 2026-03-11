@@ -91,7 +91,7 @@ FROM prewarm AS final
 
 COPY scripts/ ./scripts/
 COPY templates/ ./templates/
-COPY assets/ ./assets/
+# COPY assets/ ./assets/
 COPY docker/entrypoint.sh /usr/local/bin/vita-pipeline
 RUN  chmod +x /usr/local/bin/vita-pipeline
 

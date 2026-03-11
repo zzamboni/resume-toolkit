@@ -249,7 +249,7 @@ If `meta.publicationsOptions.links` is unset, the publications HTML page gets th
 ]
 ```
 
-`<publications>` is replaced with the generated publications base filename for the current resume. If `links` is present but empty (`[]`), no floating links are rendered.
+`<publications>` is replaced with the generated publications base filename for the current resume. If `links` is present but empty (`[]`), no floating links are rendered. Icon names can be plain Font Awesome names like `file-pdf`, or Font Awesome style strings copied from their site such as `fa-regular fa-file-pdf` or `fa-brands fa-github`.
 
 The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
 

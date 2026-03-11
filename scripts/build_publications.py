@@ -11,6 +11,7 @@ import html
 import json
 import os
 import copy
+import subprocess
 
 #logging.getLogger("bibtexparser").setLevel(logging.ERROR)
 
@@ -49,7 +50,7 @@ DEFAULT_SECTION_TITLES = {
     "other": "Other Publications",
 }
 
-FA_SVG_DIR = Path("assets/fontawesome")
+FA_ICON_SCRIPT = Path("scripts/render_fa_icon.mjs")
 _ICON_CACHE = {}
 
 
@@ -113,41 +114,28 @@ def extract_raw_bib_entries(bibtex_source: str) -> dict[str, str]:
     return raw_entries
 
 
-def normalize_icon_name(icon):
-    if not icon:
-        return ""
-    raw = str(icon)
-    cleaned = (
-        raw.replace("fa-", " ")
-        .replace("fa ", " ")
-        .replace("fa-solid ", " ")
-        .replace("fa-regular ", " ")
-        .replace("fa-brands ", " ")
-        .strip()
-    )
-    parts = cleaned.split()
-    return parts[-1] if parts else cleaned
-
-
 def load_icon_svg(icon_name: str) -> str:
     if not icon_name:
         return ""
     if icon_name in _ICON_CACHE:
         return _ICON_CACHE[icon_name]
-    if not FA_SVG_DIR.exists():
+    if not FA_ICON_SCRIPT.exists():
         _ICON_CACHE[icon_name] = ""
         return ""
-    filename = f"{icon_name}.svg"
-    for style in ("solid", "regular", "brands"):
-        candidate = FA_SVG_DIR / style / filename
-        if candidate.exists():
-            _ICON_CACHE[icon_name] = candidate.read_text()
-            return _ICON_CACHE[icon_name]
-    for candidate in FA_SVG_DIR.rglob(filename):
-        _ICON_CACHE[icon_name] = candidate.read_text()
-        return _ICON_CACHE[icon_name]
-    _ICON_CACHE[icon_name] = ""
-    return ""
+    try:
+        result = subprocess.run(
+            ["node", str(FA_ICON_SCRIPT), icon_name],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError:
+        _ICON_CACHE[icon_name] = ""
+        return ""
+
+    svg = result.stdout.strip() if result.returncode == 0 else ""
+    _ICON_CACHE[icon_name] = svg
+    return svg
 
 def parse_legacy_links(env_var: str):
     raw = os.environ.get(env_var, "")
@@ -198,13 +186,12 @@ def parse_floating_links(env_var: str):
         url = item.get("url")
         icon = item.get("icon")
         if name and url and icon:
-            icon_key = normalize_icon_name(icon)
             links.append(
                 {
                     "name": str(name),
                     "url": str(url),
                     "icon": str(icon),
-                    "icon_svg": load_icon_svg(icon_key),
+                    "icon_svg": load_icon_svg(str(icon)),
                 }
             )
     return links
