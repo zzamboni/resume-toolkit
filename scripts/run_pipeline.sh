@@ -18,7 +18,7 @@ Required:
   --out <dir>     Output base directory (relative to working dir or absolute path)
 
 Optional:
-  --bib <file>      BibTeX input (repeatable). If omitted, uses meta.publicationsOptions.bibfiles from the JSON resume
+  --bib <file>      BibTeX input (repeatable). If omitted, uses bibfiles from the generated-publications entry in the JSON resume
   --pubs-url <url>  Online publications URL used in generated publications PDF footer
 
 Example:
@@ -144,6 +144,34 @@ if [[ ! -f "$json_file" ]]; then
 fi
 
 json_dir="$(cd "$(dirname "$json_file")" && pwd)"
+state_dir="$out_base/.pipeline-state/$json_stem"
+mkdir -p "$state_dir"
+normalized_json="$state_dir/${json_stem}.normalized.json"
+
+python - "$json_file" "$normalized_json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+src = Path(sys.argv[1])
+dst = Path(sys.argv[2])
+data = json.loads(src.read_text(encoding="utf-8"))
+
+publications = data.get("publications")
+if isinstance(publications, list):
+    bib_entries = [pub for pub in publications if isinstance(pub, dict) and "bibfiles" in pub]
+    if len(bib_entries) > 1:
+        raise SystemExit("Multiple publications entries define bibfiles; only one generated-publications entry is allowed")
+    if bib_entries:
+        entry = bib_entries[0]
+        if not isinstance(entry.get("name"), str) or not entry.get("name", "").strip():
+            entry["name"] = "Full list online"
+        if not isinstance(entry.get("url"), str) or not entry.get("url", "").strip():
+            entry["url"] = "publications/"
+
+dst.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+PY
+
 pub_sections_mode="$(jq -r '
   .meta.publicationsOptions.pubSections as $s
   | if ($s == false) or ($s == null) then "none"
@@ -151,12 +179,12 @@ pub_sections_mode="$(jq -r '
     elif ($s | type) == "array" then "custom"
     else "none"
     end
-' "$json_file")"
+' "$normalized_json")"
 
 default_pub_sections=(book editorial thesis refereed techreport presentations invited patent other)
 pub_sections=()
 if [[ "$pub_sections_mode" == "custom" ]]; then
-  mapfile -t pub_sections < <(jq -r '.meta.publicationsOptions.pubSections[]? | select(type == "string") | select(length > 0)' "$json_file")
+  mapfile -t pub_sections < <(jq -r '.meta.publicationsOptions.pubSections[]? | select(type == "string") | select(length > 0)' "$normalized_json")
   if [[ ${#pub_sections[@]} -eq 0 ]]; then
     pub_sections_mode="none"
   fi
@@ -185,7 +213,7 @@ done < <(jq -r '
   | select((.key | type) == "string")
   | select((.value | type) == "string")
   | [.key, .value] | @tsv
-' "$json_file")
+' "$normalized_json")
 
 using_json_bibfiles=0
 if [[ ${#bib_files[@]} -eq 0 ]]; then
@@ -194,10 +222,10 @@ if [[ ${#bib_files[@]} -eq 0 ]]; then
     bib_files+=("$bib")
   done < <(
     jq -r '
-      [.meta.publicationsOptions.bibfiles[]? | select(type == "string") | select(length > 0)]
+      [.publications[]? | select(has("bibfiles")) | .bibfiles[]? | select(type == "string") | select(length > 0)]
       | unique
       | .[]
-    ' "$json_file"
+    ' "$normalized_json"
   )
   if [[ ${#bib_files[@]} -gt 0 ]]; then
     using_json_bibfiles=1
@@ -217,7 +245,7 @@ for i in "${!bib_files[@]}"; do
 done
 
 resume_name="$(
-  python - "$json_file" <<'PY'
+  python - "$normalized_json" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -251,11 +279,8 @@ inline_bib_for_typst=""
 inline_publications_requested="$(jq -r '
   .meta.publicationsOptions.inline_in_pdf as $i
   | ($i == true) or (($i | type) == "object")
-' "$json_file")"
+' "$normalized_json")"
 mkdir -p "$out_vita"
-
-state_dir="$out_base/.pipeline-state/$json_stem"
-mkdir -p "$state_dir"
 
 # Sync profile assets for Typst CV
 
@@ -264,17 +289,17 @@ if compgen -G "$toolkit_root/assets/profile/*" >/dev/null; then
   cp -a "$toolkit_root/assets/profile"/* "$out_vita/assets/profile/"
 fi
 
-profile_image=$(jq -r '.basics.image // ""' $json_file)
+profile_image=$(jq -r '.basics.image // ""' "$normalized_json")
 
 cv_html="$out_vita/index.html"
 cv_html_hash="$(calc_hash \
-  "FILE:$json_file" \
+  "FILE:$normalized_json" \
   "FILE:$profile_image" \
   "FILE:$toolkit_root/scripts/render_cv.sh" \
   "STR:cv_html_target=$cv_html")"
 if needs_rebuild "$cv_html" "$state_dir/cv-html.sha" "$cv_html_hash"; then
   echo "→ Building CV HTML"
-  "$toolkit_root/scripts/render_cv.sh" "" "$json_file" "$cv_html"
+  "$toolkit_root/scripts/render_cv.sh" "" "$normalized_json" "$cv_html"
   mark_built "$state_dir/cv-html.sha" "$cv_html_hash"
 else
   echo "→ CV HTML up to date"
@@ -305,11 +330,11 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
 
   pubs_html="$out_pubs/index.html"
   agg_bib="$out_pubs/$pubs_bib_name"
-  resume_name=$(jq -r '.basics.name // ""' $json_file)
+  resume_name=$(jq -r '.basics.name // ""' "$normalized_json")
   pubs_html_hash_args=(
     "FILE:$toolkit_root/scripts/build_publications.py"
     "FILE:$toolkit_root/templates/publications.html.j2"
-    "FILE:$json_file"
+    "FILE:$normalized_json"
     "STR:resume_name=$resume_name"
     "STR:pubs_links=$pubs_links_json"
     "STR:pubs_bib_name=$pubs_bib_name"
@@ -326,7 +351,7 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
       PUBS_HTML="$pubs_html" \
       PUBS_OUT_DIR="$out_pubs" \
       PUBS_BIB_FILENAME="$pubs_bib_name" \
-      PUBS_RESUME_JSON="$json_file" \
+      PUBS_RESUME_JSON="$normalized_json" \
       PUBS_LINKS="$pubs_links_json" \
       python scripts/build_publications.py
       # Optional dev autoreload snippet injection (enabled by DEV_RELOAD=1)
@@ -351,7 +376,7 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
 
   pubs_typ="$out_pubs/$pubs_typ_name"
   python "$toolkit_root/scripts/render_typst_publications.py" \
-    "$json_file" \
+    "$normalized_json" \
     "$pubs_bib_name" \
     "$pubs_typ" \
     "$pubs_url"
@@ -360,7 +385,7 @@ if [[ ${#bib_files[@]} -gt 0 ]]; then
   pubs_pdf_hash="$(calc_hash \
     "FILE:$toolkit_root/scripts/run_pipeline.sh" \
     "FILE:$toolkit_root/scripts/render_typst_publications.py" \
-    "FILE:$json_file" \
+    "FILE:$normalized_json" \
     "FILE:$agg_bib" \
     "STR:resume_name=$resume_name" \
     "STR:pubs_typ_name=$pubs_typ_name" \
@@ -386,7 +411,7 @@ fi
 cv_typ="$out_vita/$cv_typ_name"
 cv_pdf="$out_vita/$cv_pdf_name"
 cv_typ_hash_args=(
-  "FILE:$json_file"
+  "FILE:$normalized_json"
   "FILE:$toolkit_root/scripts/render_typst_cv.py"
   "DIR:$out_vita/assets/profile"
   "DIR:$toolkit_root/assets/profile"
@@ -403,7 +428,7 @@ if needs_rebuild "$cv_typ" "$state_dir/cv-typ.sha" "$cv_typ_hash"; then
   echo "→ Building Typst source"
   VITA_ASSETS_DIR="$assets_source_dir" \
   VITA_INLINE_PUBLICATIONS_BIB="$inline_bib_for_typst" \
-  python "$toolkit_root/scripts/render_typst_cv.py" "$json_file" "$cv_typ"
+  python "$toolkit_root/scripts/render_typst_cv.py" "$normalized_json" "$cv_typ"
   mark_built "$state_dir/cv-typ.sha" "$cv_typ_hash"
 else
   echo "→ Typst source up to date"

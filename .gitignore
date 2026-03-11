@@ -24,6 +24,8 @@ auto
 .DS_Store
 .auctex-auto
 node_modules/
+__pycache__/
+*.py[cod]
 build/zamboni-jsonresume/dev/
 brilliant-cv/
 pubs-src/zamboni-pubs.pdf

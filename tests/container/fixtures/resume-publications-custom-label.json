@@ -13,6 +13,16 @@
       "summary": "Built useful systems."
     }
   ],
+  "publications": [
+    {
+      "authors": [
+        "Example Person"
+      ],
+      "bibfiles": [
+        "publications.bib"
+      ]
+    }
+  ],
   "meta": {
     "theme": "jsonresume-theme-even",
     "themeOptions": {
@@ -21,9 +31,6 @@
       }
     },
     "publicationsOptions": {
-      "bibfiles": [
-        "publications.bib"
-      ],
       "pubSections": false
     }
   }

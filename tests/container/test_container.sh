@@ -115,6 +115,7 @@ assert_file "$WORK_DIR/build/out-from-json/vita/publications/index.html"
 assert_file "$WORK_DIR/build/out-from-json/vita/publications/resume-with-bibfiles-pubs.pdf"
 assert_file "$WORK_DIR/build/out-from-json/vita/publications/resume-with-bibfiles-pubs.bib"
 assert_contains "$WORK_DIR/build/out-from-json/vita/publications/index.html" "Example Person"
+assert_contains "$WORK_DIR/build/out-from-json/vita/resume-with-bibfiles.typ" '#link\("publications/"\)\[Full list online\]'
 
 echo "==> Test 5: inline publications in resume PDF"
 run_wrapper build fixtures/resume-inline-publications.json --out build/out-inline >/dev/null

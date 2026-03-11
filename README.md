@@ -107,17 +107,18 @@ Options:
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
 
-If no BibTeX files are provided on the command line, the pipeline can read them from `meta.publicationsOptions.bibfiles` in your JSON resume:
+If no BibTeX files are provided on the command line, the pipeline can read them from a special entry in the `publications` section of your JSON resume:
 
 ```json
-"meta": {
-  "publicationsOptions": {
+"publications": [
+  {
+    "authors": ["Example Person"],
     "bibfiles": ["pubs.bib", "patents.bib"]
   }
-}
+]
 ```
 
-`bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
+Only one `publications[]` entry may define `bibfiles`. If `--bib` arguments are provided, they take precedence. `bibfiles` entries are resolved relative to the JSON resume file location.
 
 
 <a id="orgd64b9f2"></a>
@@ -188,17 +189,18 @@ You can also call container entrypoint commands directly, for example:
 
 ## Bibliography configuration
 
-If no BibTeX files are provided on the command line, the pipeline can read them from `meta.publicationsOptions.bibfiles` in your JSON resume:
+If no BibTeX files are provided on the command line, the pipeline can read them from a special `publications[]` entry in your JSON resume:
 
 ```json
-"meta": {
-  "publicationsOptions": {
+"publications": [
+  {
+    "authors": ["Example Person"],
     "bibfiles": ["pubs.bib", "patents.bib"]
   }
-}
+]
 ```
 
-`bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
+Only one `publications[]` entry may define `bibfiles`. If `name` is omitted on that entry it defaults to `"Full list online"`, and if `url` is omitted it defaults to `"publications/"`. `bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
 
 By default, publications from bib files are rendered in a separate HTML/PDF document (any publications specified directly within the `publications` list in the JSON file are rendered inline).
 
@@ -262,9 +264,14 @@ DEFAULT_SECTION_TITLES = {
 Example:
 
 ```json
+"publications": [
+  {
+    "authors": ["Example Person"],
+    "bibfiles": ["pubs.bib", "patents.bib"]
+  }
+],
 "meta": {
   "publicationsOptions": {
-    "bibfiles": ["pubs.bib", "patents.bib"],
     "inline_in_pdf": {
       "ref-style": "ieee",
       "ref-full": false,
