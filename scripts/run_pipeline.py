@@ -373,9 +373,7 @@ def main() -> int:
     script_dir = Path(__file__).resolve().parent
     toolkit_root = Path(os.environ.get("VITA_TOOLKIT_ROOT", script_dir.parent)).resolve()
     workdir = Path(os.environ.get("VITA_WORKDIR", os.getcwd())).resolve()
-    assets_source_dir = Path(os.environ.get("VITA_ASSETS_DIR", workdir / "assets")).resolve()
-    if not assets_source_dir.is_dir():
-        assets_source_dir = toolkit_root / "assets"
+    assets_source_dir_env = os.environ.get("VITA_ASSETS_DIR")
 
     json_file = resolve_path(args.json, workdir).resolve()
     output_dir_value = args.out or f"build/{Path(args.json).stem}"
@@ -387,6 +385,17 @@ def main() -> int:
     json_name = json_file.name
     json_stem = json_file.stem
     json_dir = json_file.parent.resolve()
+    if assets_source_dir_env:
+        assets_source_dir = Path(assets_source_dir_env).resolve()
+    else:
+        workdir_assets = (workdir / "assets").resolve()
+        json_local_assets = (json_dir / "assets").resolve()
+        if workdir_assets.is_dir():
+            assets_source_dir = workdir_assets
+        elif json_local_assets.is_dir():
+            assets_source_dir = json_local_assets
+        else:
+            assets_source_dir = toolkit_root / "assets"
 
     cv_typ_name = f"{json_stem}.typ"
     cv_pdf_name = f"{json_stem}.pdf"

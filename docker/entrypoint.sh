@@ -100,7 +100,7 @@ run_pipeline() {
     local server_pid=""
     mkdir -p "$out_base"
     echo "========================================================="
-    echo "→ Serving $out_base at http://localhost:$VITA_SERVE_PORT"
+    echo "→ Serving $out_base at http://localhost:$VITA_SERVE_PORT/vita/"
     echo "========================================================="
     python3 -m http.server "$VITA_SERVE_PORT" --bind 0.0.0.0 --directory "$out_base" >/dev/null 2>&1 &
     server_pid=$!

@@ -227,6 +227,27 @@ def _personal_info_custom(name, icon, text, url=None):
         text: "{text}"''' + \
         (f',\n        link: "{url}"' if url else "") + "\n      )"
 
+
+def normalize_location(value: Any) -> str:
+    """Convert JSON Resume location values into a compact display string."""
+    if isinstance(value, str):
+        return value
+    if not isinstance(value, dict):
+        return ""
+
+    parts = []
+    city = value.get("city")
+    region = value.get("region")
+    postal_code = value.get("postalCode")
+    country = value.get("country")
+    country_code = value.get("countryCode")
+
+    for part in (city, region, postal_code, country, country_code):
+        if isinstance(part, str) and part.strip():
+            if part not in parts:
+                parts.append(part.strip())
+    return ", ".join(parts)
+
 def generate_metadata(basics: Dict[str, Any]) -> str:
     """Generate brilliant-cv metadata dictionary."""
     name = basics.get("name", "")
@@ -380,7 +401,7 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
             position = job.get("position", "")
             start = job.get("startDate", "")
             end = job.get("endDate", "")
-            location = job.get("location", "")
+            location = normalize_location(job.get("location", ""))
             summary = job.get("summary", "")
             highlights = job.get("highlights", [])
             url = job.get("url", "")
@@ -409,7 +430,8 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
             output += f'  date: [{date_range}],\n'
             if logo_path:
                 output += f'  logo: image("{logo_path}"),\n'
-            output += f'  location: [{escape_typst(location)}],\n'
+            if location:
+                output += f'  location: [{escape_typst(location)}],\n'
             output += f'  description: [\n    {description}\n  ]\n'
             output += ')\n\n'
             continue
@@ -417,8 +439,12 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
         company = group["company"]
         url = next((job.get("url", "") for job in jobs if job.get("url", "")), "")
         logo_path = find_company_logo(company, base_output_dir, assets_dir, source_assets_dir)
-        locations = [job.get("location", "") for job in jobs if job.get("location", "")]
-        shared_location = locations[0]
+        locations = [
+            normalize_location(job.get("location", ""))
+            for job in jobs
+            if normalize_location(job.get("location", ""))
+        ]
+        shared_location = locations[0] if locations else ""
 
         output += f'#cv-entry-start(\n'
         output += f'  society: ['
@@ -478,7 +504,7 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
         study_type = edu.get("studyType", "")
         start = edu.get("startDate", "")
         end = edu.get("endDate", "")
-        location = edu.get("location", "")
+        location = normalize_location(edu.get("location", ""))
         summary = edu.get("summary", "")
         url = edu.get("url", "")
         logo_path = find_company_logo(institution, base_output_dir, assets_dir, source_assets_dir)
@@ -502,7 +528,8 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
         output += f'  date: [{date_range}],\n'
         if logo_path:
             output += f'  logo: image("{logo_path}"),\n'
-        output += f'  location: [{escape_typst(location)}],\n'
+        if location:
+            output += f'  location: [{escape_typst(location)}],\n'
         output += f'  description: [{description}]\n'
         output += ')\n\n'
 
