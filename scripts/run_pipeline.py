@@ -155,6 +155,7 @@ def esc_latex(text: str) -> str:
 def normalize_resume(src: Path, dst: Path) -> dict:
     data = json.loads(src.read_text(encoding="utf-8"))
     resume_stem = src.stem
+    publications_stem = f"{resume_stem}-pubs"
 
     publications = data.get("publications")
     if isinstance(publications, list):
@@ -182,7 +183,10 @@ def normalize_resume(src: Path, dst: Path) -> dict:
                     continue
                 url = link.get("url")
                 if isinstance(url, str):
-                    link["url"] = url.replace("<resume>", resume_stem)
+                    link["url"] = (
+                        url.replace("<resume>", resume_stem)
+                        .replace("<publications>", publications_stem)
+                    )
 
     dst.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return data
@@ -276,6 +280,7 @@ def build_publications_links(data: dict, pdf_name: str, bib_name: str) -> str:
                 url.replace("<publications>.pdf", pdf_name)
                 .replace("<publications>.bib", bib_name)
                 .replace("<publications>", Path(pdf_name).stem)
+                .replace("<resume>", Path(pdf_name).stem.removesuffix("-pubs"))
             )
             result.append(
                 {

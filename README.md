@@ -252,7 +252,7 @@ If `meta.publicationsOptions.links` is unset, the publications HTML page gets th
 ]
 ```
 
-`<publications>` is replaced with the generated publications base filename for the current resume. If `links` is present but empty (`[]`), no floating links are rendered. Icon names can be plain Font Awesome names like `file-pdf`, or Font Awesome style strings copied from their site such as `fa-regular fa-file-pdf` or `fa-brands fa-github`.
+`<publications>` is replaced with the generated publications base filename for the current resume, and `<resume>` is replaced with the main resume file stem. If `links` is present but empty (`[]`), no floating links are rendered. Icon names can be plain Font Awesome names like `file-pdf`, or Font Awesome style strings copied from their site such as `fa-regular fa-file-pdf` or `fa-brands fa-github`.
 
 The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
 
@@ -434,14 +434,15 @@ The table of contents automatically includes links to all resume sections that h
 
 ### Floating links
 
-You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` value can be a plain Font Awesome name like `github`, or a Font Awesome class-style string such as `fa-regular fa-file-pdf` or `fa-brands fa-github`. In the `url` field, `<resume>` is replaced with the current resume file stem before rendering.
+You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` value can be a plain Font Awesome name like `github`, or a Font Awesome class-style string such as `fa-regular fa-file-pdf` or `fa-brands fa-github`. In the `url` field, `<resume>` is replaced with the current resume file stem and `<publications>` with the generated publications file stem before rendering.
 
 ```json
 {
   "meta": {
     "themeOptions": {
       "links": [
-        { "name": "PDF", "url": "/vita/<resume>.pdf", "icon": "file-pdf" },
+        { "name": "PDF", "url": "<resume>.pdf", "icon": "file-pdf" },
+        { "name": "Publications", "url": "publications/", "icon": "fa-regular fa-file-pdf" },
         { "name": "GitHub", "url": "https://github.com/zzamboni", "icon": "github" }
       ]
     }
