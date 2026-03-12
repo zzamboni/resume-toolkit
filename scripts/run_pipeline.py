@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+from urllib.parse import urlparse
 
 
 DEFAULT_PUB_SECTIONS = [
@@ -197,6 +198,43 @@ def publications_options(data: dict) -> dict:
     return options if isinstance(options, dict) else {}
 
 
+def is_remote_reference(value: str) -> bool:
+    parsed = urlparse(value)
+    return parsed.scheme in {"http", "https", "data"}
+
+
+def prepare_local_profile_image(
+    data: dict,
+    normalized_json: Path,
+    json_dir: Path,
+    out_vita: Path,
+) -> dict:
+    basics = data.get("basics")
+    if not isinstance(basics, dict):
+        return data
+
+    image_value = basics.get("image")
+    if not isinstance(image_value, str) or not image_value.strip():
+        return data
+    if is_remote_reference(image_value):
+        return data
+
+    source_path = Path(image_value)
+    if not source_path.is_absolute():
+        source_path = (json_dir / source_path).resolve()
+    if not source_path.is_file():
+        return data
+
+    dest_dir = out_vita / "assets" / "profile"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = dest_dir / source_path.name
+    shutil.copy2(source_path, dest_path)
+
+    basics["image"] = f"assets/profile/{source_path.name}"
+    normalized_json.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return data
+
+
 def resolve_sectioning_config(publications_options_value: dict) -> tuple[str, list[str], dict[str, str]]:
     pub_sections_value = publications_options_value.get("pubSections", False)
     if pub_sections_value is False or pub_sections_value is None:
@@ -374,6 +412,7 @@ def main() -> int:
     inline_value = publications_options(data).get("inline_in_pdf")
     inline_publications_requested = inline_value is True or isinstance(inline_value, dict)
     out_vita.mkdir(parents=True, exist_ok=True)
+    data = prepare_local_profile_image(data, normalized_json, json_dir, out_vita)
 
     ensure_profile_assets(toolkit_root, out_vita)
 

@@ -183,6 +183,22 @@ def download_image(url: str, base_output_dir: Path, output_dir: Path) -> Optiona
         return None
 
 
+def resolve_image_reference(image_ref: str, base_output_dir: Path, output_dir: Path) -> Optional[str]:
+    """Resolve a local image path or download a remote one."""
+    if not image_ref:
+        return None
+
+    parsed = urllib.parse.urlparse(image_ref)
+    if parsed.scheme in ("http", "https", "data"):
+        return download_image(image_ref, base_output_dir, output_dir)
+
+    local_path = base_output_dir / image_ref
+    if local_path.exists():
+        return image_ref
+
+    return download_image(image_ref, base_output_dir, output_dir)
+
+
 def find_company_logo(name: str, base_output_dir: Path, assets_dir: Path,
                       source_assets_dir: Path) -> Optional[str]:
     """Find a local logo and ensure it exists under the output assets dir."""
@@ -1226,7 +1242,7 @@ def generate_typst_cv(
     # Download profile photo
     photo_path = None
     if image_url:
-        photo_path = download_image(image_url, base_output_dir, assets_dir / "profile")
+        photo_path = resolve_image_reference(image_url, base_output_dir, assets_dir / "profile")
     inline_publications_config = get_inline_publications_config(resume_data)
     inline_publications_bib_file_path: Optional[Path] = None
     if inline_publications_bib:
