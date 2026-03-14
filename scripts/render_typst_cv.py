@@ -8,6 +8,7 @@ brilliant-cv Typst template.
 Generic JSON Resume to Typst converter.
 """
 
+import copy
 import json
 import os
 import re
@@ -17,13 +18,6 @@ from datetime import datetime
 from pathlib import Path
 import shutil
 from typing import Any, Dict, List, Optional
-
-# Config parameters
-
-# Whether to highlight some letters in #cv-section titles
-HIGHLIGHTED_TITLES = "false"
-# How many letters to highlight, only meaningful if above is true
-HIGHLIGHTED_LETTERS = "3"
 
 def convert_markdown_to_typst(text: str) -> str:
     """Convert Markdown formatting to Typst markup."""
@@ -119,6 +113,110 @@ def normalize_label(label: str) -> str:
 
 def get_theme_options(resume_data: Dict[str, Any]) -> Dict[str, Any]:
     return resume_data.get("meta", {}).get("themeOptions", {}) if resume_data else {}
+
+
+DEFAULT_PDF_THEME_LAYOUT: Dict[str, Any] = {
+    "awesome_color": "skyblue",
+    "before_section_skip": "1pt",
+    "before_entry_skip": "1pt",
+    "before_entry_description_skip": "1pt",
+    "paper_size": "a4",
+    "fonts": {
+        "regular_fonts": ["Source Sans 3"],
+        "header_font": "Roboto",
+    },
+    "header": {
+        "header_align": "left",
+        "display_profile_photo": True,
+        "profile_photo_radius": "50%",
+        "info_font_size": "10pt",
+    },
+    "entry": {
+        "display_entry_society_first": True,
+        "display_logo": True,
+    },
+    "footer": {
+        "display_page_counter": False,
+        "display_footer": True,
+    },
+}
+
+
+def get_pdf_theme_options(resume_data: Dict[str, Any]) -> Dict[str, Any]:
+    meta = resume_data.get("meta", {}) if resume_data else {}
+    if not isinstance(meta, dict):
+        return {}
+    options = meta.get("pdfthemeOptions", {})
+    return options if isinstance(options, dict) else {}
+
+
+def get_pdf_theme_layout_overrides(resume_data: Dict[str, Any]) -> Dict[str, Any]:
+    layout = get_pdf_theme_options(resume_data).get("layout", {})
+    if not isinstance(layout, dict):
+        return {}
+    return layout
+
+
+def coerce_bool(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "on"}
+    return bool(value)
+
+
+def get_section_style_options(resume_data: Dict[str, Any]) -> Dict[str, Any]:
+    layout = get_pdf_theme_layout_overrides(resume_data)
+    options: Dict[str, Any] = {}
+    if "highlighted" in layout:
+        options["highlighted"] = coerce_bool(layout["highlighted"])
+    if "letters" in layout and isinstance(layout["letters"], (int, float, str)):
+        options["letters"] = layout["letters"]
+    return options
+
+
+def deep_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    result = copy.deepcopy(base)
+    for key, value in override.items():
+        if (
+            key in result
+            and isinstance(result[key], dict)
+            and isinstance(value, dict)
+        ):
+            result[key] = deep_merge_dicts(result[key], value)
+        else:
+            result[key] = copy.deepcopy(value)
+    return result
+
+
+def typst_value(value: Any) -> str:
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "none"
+    if isinstance(value, (int, float)):
+        return str(value)
+    if isinstance(value, str):
+        return f'"{escape_typst(value)}"'
+    if isinstance(value, list):
+        items = ", ".join(typst_value(item) for item in value)
+        return f"({items},)" if items else "()"
+    if isinstance(value, dict):
+        items = ",\n".join(f"      {key}: {typst_value(val)}" for key, val in value.items())
+        if not items:
+            return "()"
+        return "(\n" + items + "\n    )"
+    return f'"{escape_typst(str(value))}"'
+
+
+def render_section_heading(label: str, section_style: Optional[Dict[str, Any]] = None) -> str:
+    args = [f'"{label}"']
+    if section_style:
+        if "highlighted" in section_style:
+            args.append(f'highlighted: {"true" if section_style["highlighted"] else "false"}')
+        if "letters" in section_style:
+            args.append(f'letters: {section_style["letters"]}')
+    return f'#cv-section({", ".join(args)})\n\n'
 
 
 def ordered_project_groups(projects: List[Dict[str, Any]]) -> List[tuple]:
@@ -268,8 +366,9 @@ def parse_skill_level(value: Any) -> Optional[int]:
         return None
     return int(match.group(1))
 
-def generate_metadata(basics: Dict[str, Any]) -> str:
+def generate_metadata(resume_data: Dict[str, Any]) -> str:
     """Generate brilliant-cv metadata dictionary."""
+    basics = resume_data.get("basics", {})
     name = basics.get("name", "")
     name_parts = name.split()
     first_name = basics.get("first_name", name_parts[0] if (len(name_parts)>0) else "")
@@ -308,6 +407,11 @@ def generate_metadata(basics: Dict[str, Any]) -> str:
             else:
                 personal_info.append(_personal_info_custom(network, networkIcon, username, url))
     personal_str = ",\n".join(personal_info)
+    layout_overrides = dict(get_pdf_theme_layout_overrides(resume_data))
+    layout_overrides.pop("highlighted", None)
+    layout_overrides.pop("letters", None)
+    pdf_theme_layout = deep_merge_dicts(DEFAULT_PDF_THEME_LAYOUT, layout_overrides)
+    layout_str = typst_value(pdf_theme_layout)
 
     metadata = f'''#let metadata = (
   language: "en",
@@ -322,33 +426,7 @@ def generate_metadata(basics: Dict[str, Any]) -> str:
     )
   ),
 
-  layout: (
-    awesome_color: "skyblue",
-    before_section_skip: "1pt",
-    before_entry_skip: "1pt",
-    before_entry_description_skip: "1pt",
-    paper_size: "a4",
-    page_margin: (x: 1.5cm, y: 1.5cm),
-
-    header: (
-      display_profile_photo: true,
-      profile_photo_radius_pt: "50%",
-      info_row_font_size: "8pt",
-      header_align: "center"
-    ),
-
-    entry: (
-      display_logo: true,
-      display_entry_society_first: true,
-    ),
-
-    footer: (
-      display_page_counter: true,
-      display_footer: true,
-    ),
-
-    fonts: (),
-  ),
+  layout: {layout_str},
 
   inject: (
     inject_ai_prompt: false,
@@ -376,7 +454,8 @@ def generate_metadata(basics: Dict[str, Any]) -> str:
     return metadata
 
 
-def render_summary(basics: Dict[str, Any], label: str = "Summary") -> str:
+def render_summary(basics: Dict[str, Any], label: str = "Summary",
+                   section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render professional summary."""
     summary = basics.get("summary", "")
     if not summary:
@@ -384,10 +463,7 @@ def render_summary(basics: Dict[str, Any], label: str = "Summary") -> str:
 
     paragraphs = [p.strip() for p in summary.split("\n\n") if p.strip()]
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
     for para in paragraphs:
         output += f"{process_text(para)}\n\n"
 
@@ -395,15 +471,13 @@ def render_summary(basics: Dict[str, Any], label: str = "Summary") -> str:
 
 
 def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_dir: Path,
-                      source_assets_dir: Path, label: str = "Work") -> str:
+                      source_assets_dir: Path, label: str = "Work",
+                      section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render work experience using brilliant-cv."""
     if not work:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     grouped_work: List[Dict[str, Any]] = []
     for job in work:
@@ -513,15 +587,13 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
 
 
 def render_education(education: List[Dict[str, Any]], base_output_dir: Path, assets_dir: Path,
-                     source_assets_dir: Path, label: str = "Education") -> str:
+                     source_assets_dir: Path, label: str = "Education",
+                     section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render education using brilliant-cv."""
     if not education:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for edu in education:
         institution = edu.get("institution", "")
@@ -584,15 +656,13 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
     return output
 
 
-def render_skills(skills: List[Dict[str, Any]], label: str = "Skills") -> str:
+def render_skills(skills: List[Dict[str, Any]], label: str = "Skills",
+                  section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render skills using brilliant-cv."""
     if not skills:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for skill_group in skills:
         name = skill_group.get("name", "")
@@ -621,15 +691,14 @@ def render_skills(skills: List[Dict[str, Any]], label: str = "Skills") -> str:
     return output
 
 
-def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Path, assets_dir: Path, label: str = "Certificates") -> str:
+def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Path, assets_dir: Path,
+                        label: str = "Certificates",
+                        section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render certificates using brilliant-cv."""
     if not certificates:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for cert in certificates:
         name = cert.get("name", "")
@@ -680,15 +749,13 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
     return output
 
 
-def render_awards(awards: List[Dict[str, Any]], label: str = "Awards") -> str:
+def render_awards(awards: List[Dict[str, Any]], label: str = "Awards",
+                  section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render awards using brilliant-cv."""
     if not awards:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for award in awards:
         title = award.get("title", "")
@@ -714,15 +781,13 @@ def render_awards(awards: List[Dict[str, Any]], label: str = "Awards") -> str:
     return output
 
 
-def render_projects(projects: List[Dict[str, Any]], label: str = "Projects") -> str:
+def render_projects(projects: List[Dict[str, Any]], label: str = "Projects",
+                    section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render projects using brilliant-cv."""
     if not projects:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for project in projects:
         name = project.get("name", "")
@@ -777,15 +842,13 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects") -> 
     return output
 
 
-def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer") -> str:
+def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer",
+                     section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render volunteer activities using brilliant-cv."""
     if not volunteer:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for vol in volunteer:
         org = vol.get("organization", "")
@@ -1114,15 +1177,13 @@ def render_publications(
     inline_publications_config: Optional[Dict[str, Any]] = None,
     inline_bib_path: Optional[str] = None,
     inline_bib_file_path: Optional[Path] = None,
+    section_style: Optional[Dict[str, Any]] = None,
 ) -> str:
     """Render publications using brilliant-cv."""
     if not publications:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     if inline_bib_path and inline_publications_config is not None:
         output += render_pergamon_bibliography(
@@ -1158,15 +1219,13 @@ def render_publications(
     return output
 
 
-def render_languages(languages: List[Dict[str, Any]], label: str = "Languages") -> str:
+def render_languages(languages: List[Dict[str, Any]], label: str = "Languages",
+                     section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render languages using brilliant-cv."""
     if not languages:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for lang in languages:
         language = lang.get("language", "")
@@ -1182,15 +1241,13 @@ def render_languages(languages: List[Dict[str, Any]], label: str = "Languages") 
     return output
 
 
-def render_interests(interests: List[Dict[str, Any]], label: str = "Interests") -> str:
+def render_interests(interests: List[Dict[str, Any]], label: str = "Interests",
+                     section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render interests using brilliant-cv."""
     if not interests:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for interest in interests:
         name = interest.get("name", "")
@@ -1204,15 +1261,13 @@ def render_interests(interests: List[Dict[str, Any]], label: str = "Interests") 
     return output
 
 
-def render_references(references: List[Dict[str, Any]], label: str = "References") -> str:
+def render_references(references: List[Dict[str, Any]], label: str = "References",
+                      section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render references in a brilliant-cv-compatible style."""
     if not references:
         return ""
 
-    output = (
-        f'#cv-section("{label}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output = render_section_heading(label, section_style)
 
     for ref in references:
         name = ref.get("name", "")
@@ -1243,6 +1298,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
     projects_by_type = bool(theme_options.get("projectsByType"))
     projects = resume_data.get("projects", [])
     inline_publications_config = get_inline_publications_config(resume_data)
+    section_style = get_section_style_options(resume_data)
     has_project_overrides = (not sections_is_default) and any(
         isinstance(section, str) and (section == "projects" or section.startswith(PROJECT_SECTION_PREFIX))
         for section in sections
@@ -1260,10 +1316,15 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
                 assets_dir,
                 source_assets_dir,
                 label=label_for("work", "Work"),
+                section_style=section_style,
             )
             continue
         if section == "volunteer":
-            output += render_volunteer(resume_data.get("volunteer", []), label=label_for("volunteer", "Volunteer"))
+            output += render_volunteer(
+                resume_data.get("volunteer", []),
+                label=label_for("volunteer", "Volunteer"),
+                section_style=section_style,
+            )
             continue
         if section == "education":
             output += render_education(
@@ -1272,6 +1333,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
                 assets_dir,
                 source_assets_dir,
                 label=label_for("education", "Education"),
+                section_style=section_style,
             )
             continue
         if section == "projects":
@@ -1280,19 +1342,19 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
                     if not items:
                         continue
                     if type_key is None:
-                        output += render_projects(items, label_for("projects", "Projects"))
+                        output += render_projects(items, label_for("projects", "Projects"), section_style=section_style)
                     else:
                         label_key = f"{PROJECT_SECTION_PREFIX}{type_key}"
-                        output += render_projects(items, label_for(label_key, str(type_key)))
+                        output += render_projects(items, label_for(label_key, str(type_key)), section_style=section_style)
                 continue
 
             if projects_by_type and has_project_overrides:
                 typeless = [p for p in projects if not p.get("type")]
                 if typeless:
-                    output += render_projects(typeless, label_for("projects", "Projects"))
+                    output += render_projects(typeless, label_for("projects", "Projects"), section_style=section_style)
                 continue
 
-            output += render_projects(projects, label_for("projects", "Projects"))
+            output += render_projects(projects, label_for("projects", "Projects"), section_style=section_style)
             continue
         if isinstance(section, str) and section.startswith(PROJECT_SECTION_PREFIX):
             if not projects_by_type:
@@ -1303,10 +1365,14 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
             items = [p for p in projects if p.get("type") == type_key]
             if not items:
                 continue
-            output += render_projects(items, label_for(section, type_key))
+            output += render_projects(items, label_for(section, type_key), section_style=section_style)
             continue
         if section == "awards":
-            output += render_awards(resume_data.get("awards", []), label=label_for("awards", "Awards"))
+            output += render_awards(
+                resume_data.get("awards", []),
+                label=label_for("awards", "Awards"),
+                section_style=section_style,
+            )
             continue
         if section == "certificates":
             output += render_certificates(
@@ -1314,6 +1380,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
                 base_output_dir,
                 assets_dir,
                 label=label_for("certificates", "Certificates"),
+                section_style=section_style,
             )
             continue
         if section == "publications":
@@ -1324,19 +1391,36 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
                 inline_publications_config=inline_publications_config,
                 inline_bib_path=inline_publications_bib,
                 inline_bib_file_path=inline_publications_bib_file_path,
+                section_style=section_style,
             )
             continue
         if section == "skills":
-            output += render_skills(resume_data.get("skills", []), label=label_for("skills", "Skills"))
+            output += render_skills(
+                resume_data.get("skills", []),
+                label=label_for("skills", "Skills"),
+                section_style=section_style,
+            )
             continue
         if section == "languages":
-            output += render_languages(resume_data.get("languages", []), label=label_for("languages", "Languages"))
+            output += render_languages(
+                resume_data.get("languages", []),
+                label=label_for("languages", "Languages"),
+                section_style=section_style,
+            )
             continue
         if section == "interests":
-            output += render_interests(resume_data.get("interests", []), label=label_for("interests", "Interests"))
+            output += render_interests(
+                resume_data.get("interests", []),
+                label=label_for("interests", "Interests"),
+                section_style=section_style,
+            )
             continue
         if section == "references":
-            output += render_references(resume_data.get("references", []), label=label_for("references", "References"))
+            output += render_references(
+                resume_data.get("references", []),
+                label=label_for("references", "References"),
+                section_style=section_style,
+            )
             continue
 
     return output
@@ -1440,7 +1524,7 @@ def generate_typst_cv(
         output += "\n"
 
     # Add metadata
-    output += generate_metadata(basics)
+    output += generate_metadata(resume_data)
     output += '''
 #let metadata_alt = metadata + (
   layout: metadata.layout + (
@@ -1468,7 +1552,7 @@ def generate_typst_cv(
 '''
 
     # Add content sections
-    output += render_summary(basics)
+    output += render_summary(basics, section_style=get_section_style_options(resume_data))
     output += render_sections(
         resume_data,
         base_output_dir,

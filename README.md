@@ -2,18 +2,34 @@
 
 <a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/general"><img alt="Docker Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit"></a>
 
-- [Requirements](#orge0cfd3e)
-- [Quick Start](#org90b52ae)
-- [Output Layout](#org1334766)
-- [Main Commands](#org8964c26)
-  - [`build` (default)](#org6cb0f47)
-  - [`fetch-logos`](#orgd64b9f2)
-  - [`update-certs`](#orgdc97180)
-  - [`update-pub-numbers`](#orgeb8b253)
-  - [Other passthrough subcommands](#org23204b4)
-- [Environment Variables](#orgc2ef02d)
-- [Under the Hood](#org79da12a)
-  - [Automated Tests](#org487a931)
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Resume Toolkit - JSONresume/BibTeX to HTML/PDF](#resume-toolkit---jsonresumebibtex-to-htmlpdf)
+  - [Requirements and installation](#requirements-and-installation)
+  - [Quick Start](#quick-start)
+  - [Output Layout](#output-layout)
+  - [Main Commands](#main-commands)
+    - [`build` (default)](#build-default)
+    - [`fetch-logos`](#fetch-logos)
+    - [`update-certs`](#update-certs)
+    - [`update-pub-numbers`](#update-pub-numbers)
+    - [Other passthrough subcommands](#other-passthrough-subcommands)
+  - [Bibliography configuration](#bibliography-configuration)
+  - [Even theme extensions](#even-theme-extensions)
+    - [Icons](#icons)
+    - [Certificate badges and notes](#certificate-badges-and-notes)
+    - [Grouping projects by type](#grouping-projects-by-type)
+    - [Sections](#sections)
+      - [Ordering](#ordering)
+      - [Custom Labels](#custom-labels)
+    - [Table of contents](#table-of-contents)
+    - [Floating links](#floating-links)
+  - [Environment Variables](#environment-variables)
+  - [Under the Hood](#under-the-hood)
+    - [Automated Tests](#automated-tests)
+
+<!-- markdown-toc end -->
 
 ---
 
@@ -25,6 +41,7 @@ This project provides a reusable build pipeline for generating:
 -   Publications PDF (from BibTeX, rendered with Typst using the [pergamon](https://typst.app/universe/package/pergamon) bibliography package)
 -   Aggregated publications BibTeX
 
+You can see a live example at <https://zzamboni.org/vita/>.
 
 
 <a id="orge0cfd3e"></a>
@@ -322,6 +339,8 @@ Example:
 }
 ```
 
+<a id="even-theme-extensions"></a>
+
 ## Even theme extensions
 
 The version of jsonresume-theme-even used by this toolkit supports the following additional options (described also in [jsonresume-them-even PR#33](https://github.com/rbardini/jsonresume-theme-even/pull/33)):
@@ -445,6 +464,44 @@ You can add floating action links in the bottom-right corner by setting `.meta.t
         { "name": "Publications", "url": "publications/", "icon": "fa-regular fa-file-pdf" },
         { "name": "GitHub", "url": "https://github.com/zzamboni", "icon": "github" }
       ]
+    }
+  }
+}
+```
+
+### PDF theme layout
+
+You can override values from `brilliant-cv`'s `metadata.layout` by setting
+`meta.pdfthemeOptions.layout` in your resume JSON. Any fields you do not set
+use the defaults from brilliant-cv's built-in template.
+
+Two additional keys are also supported under `meta.pdfthemeOptions.layout` for
+section heading rendering:
+
+- `highlighted`
+- `letters`
+
+If these are set, they are passed explicitly to `#cv-section(...)`. If they
+are omitted, nothing is passed and `brilliant-cv`'s own defaults are used.
+
+Example:
+
+```json
+{
+  "meta": {
+    "pdfthemeOptions": {
+      "layout": {
+        "awesome_color": "red",
+        "highlighted": false,
+        "letters": 3,
+        "header": {
+          "header_align": "center",
+          "info_font_size": "9pt"
+        },
+        "footer": {
+          "display_page_counter": true
+        }
+      }
     }
   }
 }

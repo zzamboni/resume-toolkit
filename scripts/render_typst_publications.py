@@ -8,10 +8,10 @@ from render_typst_cv import (
     escape_typst,
     generate_metadata,
     get_publications_label,
-    HIGHLIGHTED_LETTERS,
-    HIGHLIGHTED_TITLES,
+    get_section_style_options,
     render_pergamon_bibliography,
     render_pergamon_setup,
+    render_section_heading,
 )
 
 
@@ -120,10 +120,7 @@ def generate_typst_publications(
     output += "#show: cv.with(\n"
     output += "  metadata_pub,\n"
     output += ")\n\n"
-    output += (
-        f'#cv-section("{escape_typst(publications_label)}", highlighted: {HIGHLIGHTED_TITLES}, '
-        f'letters: {HIGHLIGHTED_LETTERS})\n\n'
-    )
+    output += render_section_heading(escape_typst(publications_label), get_section_style_options(resume_data))
     output += render_pergamon_bibliography(
         resume_data,
         style_config,
