@@ -236,17 +236,37 @@ def normalize_location(value: Any) -> str:
         return ""
 
     parts = []
+    address = value.get("address")
     city = value.get("city")
     region = value.get("region")
     postal_code = value.get("postalCode")
     country = value.get("country")
     country_code = value.get("countryCode")
 
-    for part in (city, region, postal_code, country, country_code):
+    for part in (address, city, region, postal_code, country, country_code):
         if isinstance(part, str) and part.strip():
             if part not in parts:
                 parts.append(part.strip())
     return ", ".join(parts)
+
+
+def typst_list(items: List[str]) -> str:
+    values = [f'"{escape_typst(item)}"' for item in items if isinstance(item, str) and item]
+    if not values:
+        return "()"
+    return "(" + ", ".join(values) + ",)"
+
+
+def parse_skill_level(value: Any) -> Optional[int]:
+    if isinstance(value, (int, float)):
+        level = int(value)
+        return level if 1 <= level <= 5 else None
+    if not isinstance(value, str):
+        return None
+    match = re.search(r"([1-5])(?:\s*/\s*5)?", value.strip())
+    if not match:
+        return None
+    return int(match.group(1))
 
 def generate_metadata(basics: Dict[str, Any]) -> str:
     """Generate brilliant-cv metadata dictionary."""
@@ -260,8 +280,7 @@ def generate_metadata(basics: Dict[str, Any]) -> str:
     phone = basics.get("phone", "")
     location = basics.get("location", {})
 
-    city = location.get("city", "")
-    country = location.get("countryCode", "")
+    location_text = normalize_location(location)
 
     # Build personal info for brilliant-cv
     personal_info = []
@@ -273,8 +292,8 @@ def generate_metadata(basics: Dict[str, Any]) -> str:
         url_display = url.replace("https://", "").replace("http://", "")
         # personal_info.append(_personal_info_line('homepage', url_display))
         personal_info.append(_personal_info_custom('homepage', 'home', url_display, url))
-    if city:
-        personal_info.append(_personal_info_line('location', escape_typst(city)))
+    if location_text:
+        personal_info.append(_personal_info_line('location', escape_typst(location_text)))
 
     # Add social profiles
     profiles = basics.get("profiles", [])
@@ -402,6 +421,7 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
             start = job.get("startDate", "")
             end = job.get("endDate", "")
             location = normalize_location(job.get("location", ""))
+            company_description = job.get("description", "")
             summary = job.get("summary", "")
             highlights = job.get("highlights", [])
             url = job.get("url", "")
@@ -411,6 +431,8 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
 
             # Build description
             desc_parts = []
+            if company_description:
+                desc_parts.append(process_text(company_description))
             if summary:
                 desc_parts.append(process_text(summary))
             if highlights:
@@ -463,6 +485,7 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
             position = job.get("position", "")
             start = job.get("startDate", "")
             end = job.get("endDate", "")
+            company_description = job.get("description", "")
             summary = job.get("summary", "")
             highlights = job.get("highlights", [])
 
@@ -470,6 +493,8 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
 
             # Build description
             desc_parts = []
+            if company_description:
+                desc_parts.append(process_text(company_description))
             if summary:
                 desc_parts.append(process_text(summary))
             if highlights:
@@ -506,6 +531,8 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
         end = edu.get("endDate", "")
         location = normalize_location(edu.get("location", ""))
         summary = edu.get("summary", "")
+        score = edu.get("score", "")
+        courses = edu.get("courses", [])
         url = edu.get("url", "")
         logo_path = find_company_logo(institution, base_output_dir, assets_dir, source_assets_dir)
 
@@ -515,7 +542,22 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
         if area:
             title += f" in {area}"
 
-        description = process_text(summary) if summary else ""
+        desc_items = []
+        if isinstance(summary, str) and summary:
+            desc_items.append(process_text(summary))
+        elif isinstance(summary, list):
+            for item in summary:
+                if isinstance(item, str) and item:
+                    desc_items.append(process_text(item))
+        if courses:
+            rendered_courses = " #h-bar() ".join(
+                escape_typst(course) for course in courses if isinstance(course, str) and course
+            )
+            if rendered_courses:
+                desc_items.append(f"Course: {rendered_courses}")
+        if score:
+            score_label = "GPA" if "/" in str(score) else "Score"
+            desc_items.append(f"{score_label}: {escape_typst(str(score))}")
 
         output += f'#cv-entry(\n'
         output += f'  title: [{escape_typst(title)}],\n'
@@ -530,7 +572,13 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
             output += f'  logo: image("{logo_path}"),\n'
         if location:
             output += f'  location: [{escape_typst(location)}],\n'
-        output += f'  description: [{description}]\n'
+        if desc_items:
+            output += '  description: list(\n'
+            for item in desc_items:
+                output += f'    [{item}],\n'
+            output += '  )\n'
+        else:
+            output += '  description: []\n'
         output += ')\n\n'
 
     return output
@@ -549,12 +597,26 @@ def render_skills(skills: List[Dict[str, Any]], label: str = "Skills") -> str:
     for skill_group in skills:
         name = skill_group.get("name", "")
         keywords = skill_group.get("keywords", [])
+        level = skill_group.get("level")
 
-        if not keywords:
+        if not keywords and not (isinstance(level, str) and level.strip()) and parse_skill_level(level) is None:
             continue
 
         keywords_str = " #sym.dot.c ".join([escape_typst(kw) for kw in keywords])
-        output += f'#cv-skill(type: [{escape_typst(name)}], info: [{keywords_str}])\n#v(6pt)\n\n'
+        numeric_level = parse_skill_level(level)
+        if numeric_level is not None:
+            output += (
+                f'#cv-skill-with-level(type: [{escape_typst(name)}], '
+                f'level: {numeric_level}, info: [{keywords_str or escape_typst(str(level))}])\n#v(6pt)\n\n'
+            )
+        else:
+            if isinstance(level, str) and level.strip():
+                keywords_str = (
+                    f"{keywords_str} #sym.dot.c {escape_typst(level.strip())}"
+                    if keywords_str
+                    else escape_typst(level.strip())
+                )
+            output += f'#cv-skill(type: [{escape_typst(name)}], info: [{keywords_str}])\n#v(6pt)\n\n'
 
     return output
 
@@ -669,8 +731,10 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects") -> 
         start = project.get("startDate", "")
         end = project.get("endDate", "")
         highlights = project.get("highlights", [])
+        keywords = project.get("keywords", [])
         url = project.get("url", "")
         roles = project.get("roles", [])
+        location = normalize_location(project.get("location", ""))
 
         if not name:
             if description:
@@ -701,7 +765,12 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects") -> 
         output += '],\n'
         output += f'  society: [{process_text(entity)}],\n'
         output += f'  date: [{date_range}],\n'
-        output += f'  location: [],\n'
+        if location:
+            output += f'  location: [{escape_typst(location)}],\n'
+        else:
+            output += f'  location: [],\n'
+        if keywords:
+            output += f'  tags: {typst_list([str(k) for k in keywords if isinstance(k, str) and k])},\n'
         output += f'  description: [\n    {full_description}\n  ]\n'
         output += ')\n\n'
 
@@ -724,8 +793,17 @@ def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer") 
         start = vol.get("startDate", "")
         end = vol.get("endDate", "")
         url = vol.get("url", "")
+        summary = vol.get("summary", "")
+        highlights = vol.get("highlights", [])
 
         date_range = format_date_range(start, end) if start else ""
+        desc_parts = []
+        if summary:
+            desc_parts.append(process_text(summary))
+        if highlights:
+            for highlight in highlights:
+                desc_parts.append(f"- {process_text(highlight)}")
+        description = "\n".join(desc_parts)
 
         output += f'#cv-entry(\n'
         output += f'  title: [{escape_typst(position)}],\n'
@@ -737,7 +815,7 @@ def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer") 
         output += '],\n'
         output += f'  date: [{date_range}],\n'
         output += f'  location: [],\n'
-        output += f'  description: []\n'
+        output += f'  description: [\n    {description}\n  ]\n'
         output += ')\n\n'
 
     return output
@@ -1096,6 +1174,10 @@ def render_languages(languages: List[Dict[str, Any]], label: str = "Languages") 
 
         if language and fluency:
             output += f'#cv-skill(type: [{escape_typst(language)}], info: [{escape_typst(fluency)}])\n\n'
+        elif language:
+            output += f'#cv-skill(type: [{escape_typst(language)}], info: [])\n\n'
+        elif fluency:
+            output += f'#cv-skill(type: [Language], info: [{escape_typst(fluency)}])\n\n'
 
     return output
 
@@ -1114,13 +1196,16 @@ def render_interests(interests: List[Dict[str, Any]], label: str = "Interests") 
         name = interest.get("name", "")
         keywords = interest.get("keywords", [])
         keywords_str = " #sym.dot.c ".join([escape_typst(kw) for kw in keywords])
-        output += f'#cv-skill(type: [{escape_typst(name)}], info: [{keywords_str}])\n\n'
+        if keywords_str:
+            output += f'#cv-skill(type: [{escape_typst(name)}], info: [{keywords_str}])\n\n'
+        else:
+            output += f'#cv-skill(type: [{escape_typst(name)}], info: [])\n\n'
 
     return output
 
 
 def render_references(references: List[Dict[str, Any]], label: str = "References") -> str:
-    """Render references."""
+    """Render references in a brilliant-cv-compatible style."""
     if not references:
         return ""
 
@@ -1132,12 +1217,14 @@ def render_references(references: List[Dict[str, Any]], label: str = "References
     for ref in references:
         name = ref.get("name", "")
         reference = ref.get("reference", "")
-        if name and reference:
-            output += f'- *{escape_typst(name)}*: {process_text(reference)}\n\n'
-        elif name:
-            output += f'- *{escape_typst(name)}*\n\n'
-        elif reference:
-            output += f'- {process_text(reference)}\n\n'
+        if not (name or reference):
+            continue
+        output += '#cv-honor(\n'
+        output += '  date: [],\n'
+        output += f'  title: [{escape_typst(name or "Reference")}],\n'
+        output += ')\n#v(4pt)\n\n'
+        if reference:
+            output += f'{process_text(reference)}\n\n'
 
     return output
 
