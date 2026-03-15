@@ -12,6 +12,11 @@ ENV_ARGS=()
 CMD=build
 ARGS=("$@")
 
+port_in_use() {
+  local port="$1"
+  (echo >/dev/tcp/127.0.0.1/"$port") >/dev/null 2>&1
+}
+
 usage() {
   cat <<'USAGE'
 Usage:
@@ -81,6 +86,9 @@ fi
 
 for a in "${ARGS[@]}"; do
   if [[ "$a" == "--serve" ]]; then
+    while port_in_use "$PORT"; do
+      ((PORT++))
+    done
     PORT_ARGS=(-p "${PORT}:${PORT}")
     break
   fi
