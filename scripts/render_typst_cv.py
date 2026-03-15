@@ -1263,23 +1263,25 @@ def render_interests(interests: List[Dict[str, Any]], label: str = "Interests",
 
 def render_references(references: List[Dict[str, Any]], label: str = "References",
                       section_style: Optional[Dict[str, Any]] = None) -> str:
-    """Render references in a brilliant-cv-compatible style."""
+    """Render references as Typst quotes."""
     if not references:
         return ""
 
     output = render_section_heading(label, section_style)
-
+    output += f'\n#set quote(block: true)\n'
+    
     for ref in references:
         name = ref.get("name", "")
         reference = ref.get("reference", "")
         if not (name or reference):
             continue
-        output += '#cv-honor(\n'
-        output += '  date: [],\n'
-        output += f'  title: [{escape_typst(name or "Reference")}],\n'
-        output += ')\n#v(4pt)\n\n'
+        if name:
+            output += f'#quote(attribution: [{escape_typst(name)}])[\n'
+        else:
+            output += '#quote[\n'
         if reference:
-            output += f'{process_text(reference)}\n\n'
+            output += f'{process_text(reference)}\n'
+        output += ']\n\n'
 
     return output
 
