@@ -480,9 +480,15 @@ section heading rendering:
 
 - `highlighted`
 - `letters`
+- `summary_title`
 
-If these are set, they are passed explicitly to `#cv-section(...)`. If they
-are omitted, nothing is passed and `brilliant-cv`'s own defaults are used.
+If `highlighted` or `letters` are set, they are passed explicitly to
+`#cv-section(...)`. If they are omitted, nothing is passed and
+`brilliant-cv`'s own defaults are used.
+
+`summary_title` is separate: it controls whether the `Summary` heading is
+rendered at all for non-empty summaries in the PDF output. It defaults to
+`false`.
 
 Example:
 
@@ -494,6 +500,7 @@ Example:
         "awesome_color": "red",
         "highlighted": false,
         "letters": 3,
+        "summary_title": true,
         "header": {
           "header_align": "center",
           "info_font_size": "9pt"

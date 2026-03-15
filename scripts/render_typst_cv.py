@@ -175,6 +175,10 @@ def get_section_style_options(resume_data: Dict[str, Any]) -> Dict[str, Any]:
     return options
 
 
+def show_summary_title(resume_data: Dict[str, Any]) -> bool:
+    return coerce_bool(get_pdf_theme_layout_overrides(resume_data).get("summary_title", False))
+
+
 def deep_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
     result = copy.deepcopy(base)
     for key, value in override.items():
@@ -455,6 +459,7 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
 
 
 def render_summary(basics: Dict[str, Any], label: str = "Summary",
+                   show_title: bool = False,
                    section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render professional summary."""
     summary = basics.get("summary", "")
@@ -463,7 +468,7 @@ def render_summary(basics: Dict[str, Any], label: str = "Summary",
 
     paragraphs = [p.strip() for p in summary.split("\n\n") if p.strip()]
 
-    output = render_section_heading(label, section_style)
+    output = render_section_heading(label, section_style) if show_title else ""
     for para in paragraphs:
         output += f"{process_text(para)}\n\n"
 
@@ -1554,7 +1559,11 @@ def generate_typst_cv(
 '''
 
     # Add content sections
-    output += render_summary(basics, section_style=get_section_style_options(resume_data))
+    output += render_summary(
+        basics,
+        show_title=show_summary_title(resume_data),
+        section_style=get_section_style_options(resume_data),
+    )
     output += render_sections(
         resume_data,
         base_output_dir,
