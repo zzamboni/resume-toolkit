@@ -704,6 +704,7 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
         return ""
 
     output = render_section_heading(label, section_style)
+    rendered_certs = []
 
     for cert in certificates:
         name = cert.get("name", "")
@@ -722,34 +723,55 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
             local_image = download_image(image_url, base_output_dir, assets_dir / "badges")
 
         date_fmt = format_date(date) if date else ""
+        rendered_certs.append({
+            "name": name,
+            "issuer": issuer,
+            "url": url,
+            "date_fmt": date_fmt,
+            "local_image": local_image,
+        })
 
-        if local_image:
-            output += f'#grid(\n'
-            output += f'  columns: (auto, 1fr),\n'
-            output += f'  column-gutter: 1em,\n'
-            output += f'  align: (center + horizon, left + horizon),\n'
-            output += f'  [#image("{local_image}", width: 3em)],\n'
-            output += f'  [\n'
-            if url:
-                output += f'    #link("{url}")[*{escape_typst(name)}*]'
-            else:
-                output += f'    *{escape_typst(name)}*'
-            if issuer:
-                output += f', {escape_typst(issuer)}'
-            if date_fmt:
-                output += f' ({date_fmt})'
-            output += '\n  ]\n)\n\n'
-        else:
-            output += '- '
+    use_grid = any(cert["local_image"] for cert in rendered_certs)
+
+    for cert in rendered_certs:
+        name = cert["name"]
+        issuer = cert["issuer"]
+        url = cert["url"]
+        date_fmt = cert["date_fmt"]
+        local_image = cert["local_image"]
+
+        if use_grid:
+            output += '#cv-entry(\n'
+            output += '  metadata: metadata_alt,\n'
+            output += '  title: ['
             if url:
                 output += f'#link("{url}")[*{escape_typst(name)}*]'
             else:
                 output += f'*{escape_typst(name)}*'
+            output += '],\n'
+            output += f'  society: [{escape_typst(issuer)}],\n'
+            output += f'  date: [{date_fmt}],\n'
+            if local_image:
+                output += f'  logo: [#image("{local_image}")],\n'
+            else:
+                output += '  logo: [#box(width: 0.1em, height: 0.1em)[]],\n'
+            output += '  location: [],\n'
+            output += '  description: []\n'
+            output += ')\n\n'
+        else:
+            output += '#cv-honor(\n'
+            output += f'  date: [{date_fmt}],\n'
+            output += '  title: ['
+            if url:
+                output += f'#link("{url}")[{escape_typst(name)}]'
+            else:
+                output += escape_typst(name)
+            output += '],\n'
             if issuer:
-                output += f', {escape_typst(issuer)}'
-            if date_fmt:
-                output += f' ({date_fmt})'
-            output += '\n\n'
+                output += f'  issuer: [{escape_typst(issuer)}],\n'
+            if url:
+                output += f'  url: "{url}",\n'
+            output += ')\n\n'
 
     return output
 
