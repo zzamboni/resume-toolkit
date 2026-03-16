@@ -237,6 +237,7 @@ If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the ag
     -   `ref-style: "ieee"`
     -   `ref-full: true`
     -   `key-list: []`
+    -   `ref-sorting: "ydnt"`
 -   You can also pass a dictionary to configure the inline bibliography rendering, for example:
 
 ```json
@@ -245,7 +246,8 @@ If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the ag
     "inline_in_pdf": {
       "ref-style": "ieee",
       "ref-full": true,
-      "key-list": []
+      "key-list": [],
+      "ref-sorting": "ydnt"
     }
   }
 }
@@ -322,7 +324,8 @@ Example:
     "inline_in_pdf": {
       "ref-style": "ieee",
       "ref-full": false,
-      "key-list": ["zamboni20:emacs-org-leanpub"]
+      "key-list": ["zamboni20:emacs-org-leanpub"],
+      "ref-sorting": "ydnt"
     },
     "links": [
       {

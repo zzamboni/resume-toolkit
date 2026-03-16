@@ -915,6 +915,7 @@ INLINE_PUBLICATIONS_DEFAULTS: Dict[str, Any] = {
     "ref-style": "ieee",
     "ref-full": True,
     "key-list": [],
+    "ref-sorting": "ydnt",
 }
 
 
@@ -1163,6 +1164,7 @@ def render_pergamon_bibliography(
 ) -> str:
     sectioning_enabled, section_order, section_titles = resolve_publications_sectioning(resume_data)
     bibliography_title = get_publications_label(resume_data)
+    sorting = str(config.get("ref-sorting", "ydnt") or "ydnt").strip() or "ydnt"
     blocks: List[str] = []
 
     def block(title_expr: str, filter_expr: str) -> str:
@@ -1171,7 +1173,7 @@ def render_pergamon_bibliography(
             "    format-reference: format-reference(reference-label: publications-style.reference-label),\n"
             f"    title: {title_expr},\n"
             "    label-generator: publications-style.label-generator,\n"
-            "    sorting: \"ydnt\",\n"
+            f'    sorting: "{escape_typst(sorting)}",\n'
             "    show-all: true,\n"
             "    resume-after: auto,\n"
             f"    filter: reference => publications-include(reference){filter_expr}\n"
