@@ -126,6 +126,7 @@ Options:
 -   `--pubs-url <url>`: online publications URL for PDF footer
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
+-   `--no-fetch-logos`: disable automatic logo fetching when `assets/logos/` is missing
 
 If no BibTeX files are provided on the command line, the pipeline can read them from a special entry in the `publications` section of your JSON resume:
 
@@ -139,6 +140,12 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
 ```
 
 Only one `publications[]` entry may define `bibfiles`. If `--bib` arguments are provided, they take precedence. `bibfiles` entries are resolved relative to the JSON resume file location.
+
+If no source `assets/logos/` directory is found, the pipeline will
+automatically try to populate it by running the logo fetcher. If
+`LOGODEV_TOKEN` is not available, the build continues but emits a warning and
+skips automatic logo download. Use `--no-fetch-logos` to disable both the
+automatic fetch and the warning.
 
 
 <a id="orgd64b9f2"></a>

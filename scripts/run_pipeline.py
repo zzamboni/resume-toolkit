@@ -68,6 +68,11 @@ def parse_args() -> argparse.Namespace:
         default="",
         help="Online publications URL used in generated publications PDF footer",
     )
+    parser.add_argument(
+        "--no-fetch-logos",
+        action="store_true",
+        help="Disable automatic logo fetching when no source logo directory is found",
+    )
     return parser.parse_args()
 
 
@@ -367,6 +372,47 @@ def inject_reload_if_needed(toolkit_root: Path, html_path: Path) -> None:
     run_command([sys.executable, str(toolkit_root / "scripts" / "inject_dev_reload.py"), str(html_path)])
 
 
+def ensure_logo_assets(
+    toolkit_root: Path,
+    resume_json: Path,
+    assets_source_dir: Path,
+    workdir: Path,
+    no_fetch_logos: bool,
+) -> Path:
+    logos_dir = assets_source_dir / "logos"
+    if logos_dir.is_dir():
+        return assets_source_dir
+    if no_fetch_logos:
+        return assets_source_dir
+
+    token = os.environ.get("LOGODEV_TOKEN", "").strip()
+    if not token:
+        print(
+            f"Warning: logo assets directory not found at {logos_dir} and LOGODEV_TOKEN is not set; "
+            "skipping automatic logo download.",
+            file=sys.stderr,
+        )
+        return assets_source_dir
+
+    fetch_assets_dir = assets_source_dir
+    if assets_source_dir == toolkit_root / "assets":
+        fetch_assets_dir = workdir / "assets"
+
+    print(f"→ Fetching logos into {fetch_assets_dir / 'logos'}")
+    run_command(
+        [
+            sys.executable,
+            str(toolkit_root / "scripts" / "fetch_company_logos.py"),
+            str(resume_json),
+            "--logos-dir",
+            str(fetch_assets_dir / "logos"),
+            "--token",
+            token,
+        ]
+    )
+    return fetch_assets_dir
+
+
 def main() -> int:
     args = parse_args()
 
@@ -396,6 +442,13 @@ def main() -> int:
             assets_source_dir = json_local_assets
         else:
             assets_source_dir = toolkit_root / "assets"
+    assets_source_dir = ensure_logo_assets(
+        toolkit_root,
+        json_file,
+        assets_source_dir,
+        workdir,
+        args.no_fetch_logos,
+    )
 
     cv_typ_name = f"{json_stem}.typ"
     cv_pdf_name = f"{json_stem}.pdf"

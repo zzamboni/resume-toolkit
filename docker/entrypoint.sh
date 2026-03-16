@@ -9,7 +9,7 @@ export PATH="$VITA_TOOLKIT_ROOT/.venv/bin:$VITA_TOOLKIT_ROOT/node_modules/.bin:$
 usage() {
   cat <<'USAGE'
 Usage:
-  vita-pipeline [build|pipeline] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve]
+  vita-pipeline [build|pipeline] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
   vita-pipeline fetch-logos <resume.json> [--overwrite] [--dry-run] [--token <token>]
   vita-pipeline update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   vita-pipeline update-pub-numbers <resume.json> [--html <path>]
@@ -41,6 +41,7 @@ resolve_work_path() {
 run_pipeline() {
   local watch=0
   local serve=0
+  local no_fetch_logos=0
   local resume=""
   local out=""
   local pubs_url=""
@@ -50,6 +51,7 @@ run_pipeline() {
     case "$1" in
       --watch) watch=1; shift ;;
       --serve) serve=1; watch=1; shift ;;
+      --no-fetch-logos) no_fetch_logos=1; shift ;;
       --out) out="$2"; shift 2 ;;
       --pubs-url) pubs_url="$2"; shift 2 ;;
       -h|--help)
@@ -87,6 +89,9 @@ run_pipeline() {
   fi
   if [[ -n "$pubs_url" ]]; then
     pipeline_args+=(--pubs-url "$pubs_url")
+  fi
+  if [[ "$no_fetch_logos" == "1" ]]; then
+    pipeline_args+=(--no-fetch-logos)
   fi
 
   local out_base="$out"

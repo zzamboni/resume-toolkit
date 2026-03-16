@@ -20,7 +20,7 @@ port_in_use() {
 usage() {
   cat <<'USAGE'
 Usage:
-  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve]
+  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
   build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run]
   build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh update-pub-numbers <resume.json> [--html <path>]
@@ -80,7 +80,7 @@ case "${1:-}" in
     ;;
 esac
 
-if [[ "$CMD" == "fetch-logos" && -n "${LOGODEV_TOKEN:-}" ]]; then
+if [[ -n "${LOGODEV_TOKEN:-}" ]]; then
   ENV_ARGS+=(-e "LOGODEV_TOKEN=$LOGODEV_TOKEN")
 fi
 
