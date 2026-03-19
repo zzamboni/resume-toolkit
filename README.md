@@ -45,8 +45,8 @@ You can see a live real example at <https://zzamboni.org/vita/>.
 
 You can find some further samples in the `samples/` directory:
 
-- `example-resume/`: fully synthetic example which shows a variety of features.
-- `john-doe-brilliantcv/`: the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
+- [`samples/example-resume/`](samples/example-resume): fully synthetic example which shows a variety of features.
+- [`samples/john-doe-brilliantcv/`](samples/john-doe-brilliantcv): the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
 
 <a id="orge0cfd3e"></a>
 
