@@ -1,6 +1,6 @@
 # Resume Toolkit - JSONresume/BibTeX to HTML/PDF
 
-<a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/general"><img alt="Docker Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit"></a>
+<a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit"><img alt="Docker Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit?sort=semver"></a>
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
