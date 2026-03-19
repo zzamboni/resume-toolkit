@@ -246,8 +246,9 @@ If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the ag
 -   If `"inline_in_pdf": true`, defaults are used:
     -   `ref-style: "ieee"`
     -   `ref-full: true`
-    -   `key-list: []`
     -   `ref-sorting: "ydnt"`
+-   `bibentries` can be set on the generated-publications `publications[]` entry to select explicit BibTeX entry keys for the aggregated bibliography and inline PDF bibliography.
+-   `bibkeywords` can be set on the generated-publications `publications[]` entry to include entries whose BibTeX `keywords` contain any of the listed values.
 -   You can also pass a dictionary to configure the inline bibliography rendering, for example:
 
 ```json
@@ -256,7 +257,6 @@ If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the ag
     "inline_in_pdf": {
       "ref-style": "ieee",
       "ref-full": true,
-      "key-list": [],
       "ref-sorting": "ydnt"
     }
   }
@@ -326,7 +326,9 @@ Example:
 "publications": [
   {
     "authors": ["Example Person"],
-    "bibfiles": ["pubs.bib", "patents.bib"]
+    "bibfiles": ["pubs.bib", "patents.bib"],
+    "bibkeywords": ["selected", "important"],
+    "bibentries": ["zamboni20:emacs-org-leanpub"]
   }
 ],
 "meta": {
@@ -334,7 +336,6 @@ Example:
     "inline_in_pdf": {
       "ref-style": "ieee",
       "ref-full": false,
-      "key-list": ["zamboni20:emacs-org-leanpub"],
       "ref-sorting": "ydnt"
     },
     "links": [

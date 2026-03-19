@@ -27,11 +27,9 @@ def generate_typst_publications(
 
     style_config = {
         "ref-style": "ieee",
-        "ref-full": True,
-        "key-list": [],
+        "ref-full": True
     }
 
-    basics = resume_data.get("basics", {})
     output = """// Publications list generated from BibTeX
 // Using brilliant-cv template for document layout
 
@@ -96,7 +94,7 @@ def generate_typst_publications(
 
 """
     output += render_pergamon_setup(bib_filename, style_config)
-    output += generate_metadata(basics)
+    output += generate_metadata(resume_data)
     output += "\n"
     output += "#let metadata_pub = metadata + (\n"
     output += "  personal: metadata.personal + (\n"

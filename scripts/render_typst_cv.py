@@ -6,6 +6,8 @@ This script reads a JSONResume JSON file and generates a CV using the
 brilliant-cv Typst template.
 
 Generic JSON Resume to Typst converter.
+
+(c) 2026 Diego Zamboni
 """
 
 import copy
@@ -914,7 +916,6 @@ def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer",
 INLINE_PUBLICATIONS_DEFAULTS: Dict[str, Any] = {
     "ref-style": "ieee",
     "ref-full": True,
-    "key-list": [],
     "ref-sorting": "ydnt",
 }
 
@@ -932,6 +933,18 @@ def get_publications_label(resume_data: Dict[str, Any], fallback: str = "Publica
     if not isinstance(label, str) or not label.strip():
         return fallback
     return normalize_label(label.strip())
+
+
+def get_generated_publications_entry(resume_data: Dict[str, Any]) -> Dict[str, Any]:
+    publications = resume_data.get("publications")
+    if not isinstance(publications, list):
+        return {}
+    entries = [pub for pub in publications if isinstance(pub, dict) and "bibfiles" in pub]
+    if len(entries) > 1:
+        raise SystemExit(
+            "Multiple publications entries define bibfiles; only one generated-publications entry is allowed"
+        )
+    return entries[0] if entries else {}
 
 
 def resolve_publications_sectioning(resume_data: Dict[str, Any]) -> tuple[bool, List[str], Dict[str, str]]:
@@ -964,15 +977,22 @@ def resolve_publications_sectioning(resume_data: Dict[str, Any]) -> tuple[bool, 
 
 
 def get_inline_publications_config(resume_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
-    """Return inline bibliography config from meta.publicationsOptions."""
+    """Return inline bibliography config from meta.publicationsOptions plus publications entry selectors."""
     inline = get_publications_options(resume_data).get("inline_in_pdf")
+    publication = get_generated_publications_entry(resume_data)
+    bibentries = publication.get("bibentries", []) if isinstance(publication, dict) else []
+    normalized_bibentries = [entry for entry in bibentries if isinstance(entry, str) and entry]
+
     if inline is True:
-        return dict(INLINE_PUBLICATIONS_DEFAULTS)
-    if isinstance(inline, dict):
+        merged = dict(INLINE_PUBLICATIONS_DEFAULTS)
+    elif isinstance(inline, dict):
         merged = dict(INLINE_PUBLICATIONS_DEFAULTS)
         merged.update(inline)
-        return merged
-    return None
+    else:
+        return None
+
+    merged["key-list"] = normalized_bibentries
+    return merged
 
 
 def to_typst_value(value: Any) -> str:

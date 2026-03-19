@@ -203,6 +203,18 @@ def publications_options(data: dict) -> dict:
     return options if isinstance(options, dict) else {}
 
 
+def get_generated_publications_entry(data: dict) -> dict | None:
+    publications = data.get("publications")
+    if not isinstance(publications, list):
+        return None
+    entries = [pub for pub in publications if isinstance(pub, dict) and "bibfiles" in pub]
+    if len(entries) > 1:
+        raise SystemExit(
+            "Multiple publications entries define bibfiles; only one generated-publications entry is allowed"
+        )
+    return entries[0] if entries else None
+
+
 def is_remote_reference(value: str) -> bool:
     parsed = urlparse(value)
     return parsed.scheme in {"http", "https", "data"}
@@ -273,17 +285,14 @@ def resolve_bib_files(
     bib_files = list(cli_bibs)
     using_json_bibfiles = False
     if not bib_files:
-        publications = data.get("publications")
         raw_bibs: list[str] = []
-        if isinstance(publications, list):
-            for publication in publications:
-                if not isinstance(publication, dict) or "bibfiles" not in publication:
-                    continue
-                bib_list = publication.get("bibfiles")
-                if isinstance(bib_list, list):
-                    for item in bib_list:
-                        if isinstance(item, str) and item:
-                            raw_bibs.append(item)
+        publication = get_generated_publications_entry(data)
+        if isinstance(publication, dict):
+            bib_list = publication.get("bibfiles")
+            if isinstance(bib_list, list):
+                for item in bib_list:
+                    if isinstance(item, str) and item:
+                        raw_bibs.append(item)
         bib_files = sorted(set(raw_bibs))
         if bib_files:
             using_json_bibfiles = True

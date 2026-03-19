@@ -249,6 +249,27 @@ def load_publications_options() -> dict:
     return options if isinstance(options, dict) else {}
 
 
+def load_generated_publications_entry() -> dict:
+    if not PUBS_RESUME_JSON:
+        return {}
+    path = Path(PUBS_RESUME_JSON)
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    publications = data.get("publications")
+    if not isinstance(publications, list):
+        return {}
+    entries = [pub for pub in publications if isinstance(pub, dict) and "bibfiles" in pub]
+    if len(entries) > 1:
+        raise SystemExit(
+            "Multiple publications entries define bibfiles; only one generated-publications entry is allowed"
+        )
+    return entries[0] if entries else {}
+
+
 def resolve_sectioning_config(publications_options: dict) -> tuple[bool, list[str], dict[str, str]]:
     pub_sections = publications_options.get("pubSections", False)
 
@@ -462,6 +483,50 @@ def entry_to_jsonresume_publication(e):
         "summary": " — ".join([b for b in summary_bits if b]),
     }
 
+def resolve_entry_filters() -> tuple[set[str], set[str]]:
+    publication = load_generated_publications_entry()
+    raw_keys = publication.get("bibentries", []) if isinstance(publication, dict) else []
+    raw_keywords = publication.get("bibkeywords", []) if isinstance(publication, dict) else []
+
+    selected_keys = {
+        str(key).strip()
+        for key in raw_keys
+        if isinstance(key, str) and key.strip()
+    }
+    selected_keywords = {
+        str(keyword).strip().lower()
+        for keyword in raw_keywords
+        if isinstance(keyword, str) and keyword.strip()
+    }
+    return selected_keys, selected_keywords
+
+
+def filter_bib_entries(raw_entries, raw_entry_text_by_key):
+    selected_keys, selected_keywords = resolve_entry_filters()
+    if not selected_keys and not selected_keywords:
+        return raw_entries, raw_entry_text_by_key
+
+    filtered_entries = []
+    filtered_raw_entry_text_by_key = {}
+    for entry in raw_entries:
+        entry_key = str(entry.get("key") or entry.get("ID") or "").strip()
+        entry_keywords = {
+            keyword.strip().lower()
+            for keyword in str(entry.get("keywords", "")).split(",")
+            if keyword.strip()
+        }
+        include = False
+        if entry_key and entry_key in selected_keys:
+            include = True
+        if selected_keywords and entry_keywords.intersection(selected_keywords):
+            include = True
+        if include:
+            filtered_entries.append(entry)
+            if entry_key and entry_key in raw_entry_text_by_key:
+                filtered_raw_entry_text_by_key[entry_key] = raw_entry_text_by_key[entry_key]
+    return filtered_entries, filtered_raw_entry_text_by_key
+
+
 def normalize(raw_entries, section_order, sectioning_enabled):
     entries = copy.deepcopy(raw_entries)
     for e in entries:
@@ -529,6 +594,7 @@ def main():
     sectioning_enabled, section_order, section_titles = resolve_sectioning_config(publications_options)
 
     raw_entries, raw_entry_text_by_key = load_bibtex()
+    raw_entries, raw_entry_text_by_key = filter_bib_entries(raw_entries, raw_entry_text_by_key)
     entries = normalize(raw_entries, section_order, sectioning_enabled)
     sections = group_by_section(entries, section_order, sectioning_enabled)
     write_combined_bib(raw_entries, raw_entry_text_by_key, sections, section_order, section_titles, sectioning_enabled)

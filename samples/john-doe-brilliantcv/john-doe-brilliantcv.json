@@ -301,7 +301,13 @@
             ],
             "bibfiles": [
                 "publications.bib"
+            ],
+            "bibentries": [
+                "smith2020",
+                "jones2021",
+                "wilson2022"
             ]
+            
         }
     ],
     "meta": {
@@ -326,12 +332,12 @@
             "links": [
                 {
                     "name": "PDF",
-                    "url": "/vita/<resume>.pdf",
+                    "url": "<resume>.pdf",
                     "icon": "fa-regular fa-file-pdf"
                 },
                 {
                     "name": "Publications",
-                    "url": "/vita/publications/<publications>.pdf",
+                    "url": "publications/",
                     "icon": "fa-solid fa-book"
                 },
                 {
@@ -345,12 +351,7 @@
             "inline_in_pdf": {
                 "ref-style": "ieee",
                 "ref-full": false,
-                "ref-sorting": "ynt",
-                "key-list": [
-                    "smith2020",
-                    "jones2021",
-                    "wilson2022"
-                ]
+                "ref-sorting": "ynt"
             },
             "pubSections": false,
             "pubSectionTitles": {
@@ -361,7 +362,7 @@
             "links": [
                 {
                     "name": "Resume PDF",
-                    "url": "../<resume>.pdf",
+                    "url": "<publications>.pdf",
                     "icon": "fa-regular fa-file-pdf"
                 },
                 {

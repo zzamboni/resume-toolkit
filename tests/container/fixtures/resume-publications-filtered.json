@@ -15,26 +15,21 @@
   ],
   "publications": [
     {
-      "name": "Full list online",
-      "url": "/vita/publications/",
       "authors": [
         "Example Person"
       ],
       "bibfiles": [
-        "publications.bib"
+        "publications-filtered.bib"
       ],
-      "bibentries": [
-        "example2024paper"
+      "bibkeywords": [
+        "selected"
       ]
     }
   ],
   "meta": {
     "theme": "jsonresume-theme-even",
     "publicationsOptions": {
-      "inline_in_pdf": {
-        "ref-style": "apa",
-        "ref-full": false
-      }
+      "inline_in_pdf": true
     }
   }
 }
