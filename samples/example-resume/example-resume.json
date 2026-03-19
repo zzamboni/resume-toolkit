@@ -1,0 +1,268 @@
+{
+  "basics": {
+    "name": "Avery Example",
+    "label": "Staff Platform Engineer",
+    "image": "example-profile.svg",
+    "email": "avery@example.test",
+    "phone": "+41 44 555 0100",
+    "url": "https://example.test",
+    "summary": "Platform engineer with experience across developer tooling, internal platforms, documentation systems, and technical leadership. This synthetic sample is intended to exercise most structures supported by the toolkit.",
+    "location": {
+      "city": "Zurich",
+      "countryCode": "CH"
+    },
+    "profiles": [
+      {
+        "network": "GitHub",
+        "username": "avery-example",
+        "url": "https://github.com/avery-example"
+      },
+      {
+        "network": "LinkedIn",
+        "username": "avery-example",
+        "url": "https://www.linkedin.com/in/avery-example/"
+      },
+      {
+        "network": "Mastodon",
+        "username": "@avery@example.social",
+        "url": "https://example.social/@avery"
+      }
+    ]
+  },
+  "work": [
+    {
+      "name": "Northwind Cloud",
+      "position": "Staff Platform Engineer",
+      "url": "https://example.test/northwind",
+      "startDate": "2022-01-01",
+      "summary": "Led the internal developer platform program for a multi-product engineering organization.",
+      "highlights": [
+        "Reduced service bootstrap time from days to under one hour with a paved-road platform.",
+        "Introduced policy-as-code, golden CI templates, and internal documentation standards.",
+        "Coached teams on release automation, observability, and production readiness."
+      ]
+    },
+    {
+      "name": "Fabrikam Systems",
+      "position": "Senior Software Engineer",
+      "url": "https://example.test/fabrikam",
+      "startDate": "2018-04-01",
+      "endDate": "2021-12-31",
+      "summary": "Built backend services and deployment tooling for a global analytics product.",
+      "highlights": [
+        "Migrated core APIs from a monolith to containerized services.",
+        "Established SLOs and incident review practices for the platform team."
+      ]
+    }
+  ],
+  "volunteer": [
+    {
+      "organization": "Open Documentation Collective",
+      "position": "Maintainer",
+      "url": "https://example.test/docs",
+      "startDate": "2021-01-01",
+      "summary": "Maintains tooling and review workflows for an open-source documentation community."
+    }
+  ],
+  "education": [
+    {
+      "institution": "Example University",
+      "studyType": "MSc",
+      "area": "Computer Science",
+      "startDate": "2015-09-01",
+      "endDate": "2017-07-01",
+      "score": "5.8/6.0"
+    },
+    {
+      "institution": "Example University",
+      "studyType": "BSc",
+      "area": "Computer Engineering",
+      "startDate": "2012-09-01",
+      "endDate": "2015-07-01"
+    }
+  ],
+  "awards": [
+    {
+      "title": "Engineering Excellence Award",
+      "awarder": "Northwind Cloud",
+      "date": "2024-06-01",
+      "summary": "Recognized for platform simplification and developer experience improvements."
+    }
+  ],
+  "certificates": [
+    {
+      "name": "Certified Kubernetes Administrator",
+      "issuer": "The Linux Foundation",
+      "date": "2024-02-15",
+      "url": "https://example.test/certificates/cka"
+    }
+  ],
+  "publications": [
+    {
+      "name": "Selected publication",
+      "publisher": "Journal of Practical Platforms",
+      "releaseDate": "2024-05-01",
+      "url": "https://doi.example/selected-paper"
+    },
+    {
+      "authors": [
+        "Avery Example",
+        "Taylor Example"
+      ],
+      "bibfiles": [
+        "example-publications.bib"
+      ],
+      "bibentries": [
+          "example2024platforms",
+          "example2023docs"
+        ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "Platform Engineering",
+      "keywords": [
+        "Developer platforms",
+        "CI/CD",
+        "Infrastructure as code",
+        "Observability"
+      ]
+    },
+    {
+      "name": "Programming",
+      "keywords": [
+        "Python",
+        "Go",
+        "TypeScript",
+        "Bash"
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "language": "English",
+      "fluency": "Native"
+    },
+    {
+      "language": "German",
+      "fluency": "Professional working proficiency"
+    }
+  ],
+  "interests": [
+    {
+      "name": "Writing",
+      "keywords": [
+        "Technical blogging",
+        "Architecture decision records"
+      ]
+    },
+    {
+      "name": "Teaching",
+      "keywords": [
+        "Workshops",
+        "Mentoring"
+      ]
+    }
+  ],
+  "references": [
+    {
+      "name": "Jordan Mentor",
+      "reference": "Avery combines strong systems design skills with unusually clear documentation and team enablement."
+    }
+  ],
+  "projects": [
+    {
+      "name": "Launchpad",
+      "type": "Application development",
+      "description": "Internal service bootstrap portal with reusable templates and governance checks.",
+      "url": "https://example.test/launchpad",
+      "highlights": [
+        "Automated repository creation, CI wiring, and service ownership registration.",
+        "Integrated scorecards and documentation checklists into project setup."
+      ],
+      "keywords": [
+        "Backstage",
+        "Python",
+        "Automation"
+      ]
+    },
+    {
+      "name": "deploykit",
+      "type": "Library development",
+      "description": "Reusable deployment workflow library used across multiple teams.",
+      "url": "https://github.com/avery-example/deploykit",
+      "keywords": [
+        "GitHub Actions",
+        "Release engineering",
+        "Policy as code"
+      ]
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even",
+    "themeOptions": {
+      "icons": "fontawesome",
+      "showTableOfContents": true,
+      "projectsByType": false,
+      "sectionLabels": {
+        "work": "Experience",
+        "projects:application": "Applications",
+        "projects:library": "Libraries",
+        "publications": "Research Output"
+      },
+      "links": [
+        {
+          "name": "PDF",
+          "url": "<resume>.pdf",
+          "icon": "fa-regular fa-file-pdf"
+        },
+        {
+          "name": "Publications",
+          "url": "publications/",
+          "icon": "fa-quote-left"
+        },
+        {
+          "name": "Source",
+          "url": "https://github.com/example/resume-toolkit-sample",
+          "icon": "fa-brands fa-github"
+        }
+      ]
+    },
+    "publicationsOptions": {
+      "inline_in_pdf": {
+        "ref-style": "ieee",
+        "ref-full": false,
+        "key-list": [
+          "example2024platforms",
+          "example2023docs"
+        ]
+      },
+      "links": [
+        {
+          "name": "Publications PDF",
+          "url": "<publications>.pdf",
+          "icon": "fa-regular fa-file-pdf"
+        },
+        {
+          "name": "BibTeX",
+          "url": "<publications>.bib",
+          "icon": "tex"
+        }
+      ],
+      "pubSections": [
+        "book",
+        "refereed",
+        "presentations",
+        "patent",
+        "other"
+      ],
+      "pubSectionTitles": {
+        "book": "Books",
+        "refereed": "Peer-reviewed Papers",
+        "presentations": "Talks",
+        "patent": "Patents",
+        "other": "Other Writing"
+      }
+    }
+  }
+}

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Synthetic profile portrait</title>
+  <desc id="desc">Abstract illustrated profile image for the sample resume.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f766e"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="48" fill="url(#bg)"/>
+  <circle cx="256" cy="190" r="86" fill="#f4d7c7"/>
+  <path d="M152 420c10-86 58-132 104-132s94 46 104 132" fill="#f4d7c7"/>
+  <path d="M170 162c8-57 49-102 106-102 58 0 101 43 107 100-18-13-41-22-68-22-52 0-95 20-145 24z" fill="#0f172a"/>
+  <path d="M146 430c18-74 70-128 110-128 39 0 92 54 110 128" fill="#111827"/>
+  <circle cx="224" cy="186" r="8" fill="#111827"/>
+  <circle cx="288" cy="186" r="8" fill="#111827"/>
+  <path d="M225 235c18 16 44 16 62 0" fill="none" stroke="#8b5e3c" stroke-width="8" stroke-linecap="round"/>
+</svg>

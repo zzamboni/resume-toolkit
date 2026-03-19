@@ -41,8 +41,12 @@ This project provides a reusable build pipeline for generating:
 -   Publications PDF (from BibTeX, rendered with Typst using the [pergamon](https://typst.app/universe/package/pergamon) bibliography package)
 -   Aggregated publications BibTeX
 
-You can see a live example at <https://zzamboni.org/vita/>.
+You can see a live real example at <https://zzamboni.org/vita/>.
 
+You can find some further samples in the `samples/` directory:
+
+- `example-resume/`: fully synthetic example which shows a variety of features.
+- `john-doe-brilliantcv/`: the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
 
 <a id="orge0cfd3e"></a>
 
@@ -51,7 +55,7 @@ You can see a live example at <https://zzamboni.org/vita/>.
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
 
 -   Docker
--   A file in [JSON Resume](https://jsonresume.org/) format
+-   A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described )
 -   Optional BibTeX file(s) for publications
 
 If no BibTeX files are provided, the publications output is skipped.
@@ -73,6 +77,12 @@ Build a Resume + publications:
 
 ```sh
 ./build-resume.sh resume.json pubs-src/publications.bib
+```
+
+Build the bundled synthetic example:
+
+```sh
+./build-resume.sh sample/example-resume.json
 ```
 
 Build, watch changes, and serve output:
