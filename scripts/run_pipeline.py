@@ -436,10 +436,10 @@ def main() -> int:
     else:
         workdir_assets = (workdir / "assets").resolve()
         json_local_assets = (json_dir / "assets").resolve()
-        if workdir_assets.is_dir():
-            assets_source_dir = workdir_assets
-        elif json_local_assets.is_dir():
+        if json_local_assets.is_dir():
             assets_source_dir = json_local_assets
+        elif workdir_assets.is_dir():
+            assets_source_dir = workdir_assets
         else:
             assets_source_dir = toolkit_root / "assets"
     assets_source_dir = ensure_logo_assets(
