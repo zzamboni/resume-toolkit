@@ -167,6 +167,39 @@ cd "$VITA_TOOLKIT_ROOT"
 python scripts/update_pub_numbers.py --json "$resume" --html "$html"
 '''
 
+[tasks.release]
+description = "Bump VERSION, create release tag, and push tags"
+usage = '''
+arg "<version>" help="Release version (for example: 0.2.2)"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$VITA_TOOLKIT_ROOT"
+
+version="$usage_version"
+tag="v$version"
+
+if [[ ! -f VERSION ]]; then
+  echo "VERSION file not found" >&2
+  exit 1
+fi
+
+printf '%s\n' "$version" > VERSION
+
+git add VERSION
+if git diff --cached --quiet -- VERSION; then
+  echo "VERSION is already $version; nothing to commit" >&2
+  exit 1
+fi
+
+git commit -m "Release $tag" -- VERSION
+git tag -a "$tag" -m "Release $tag"
+git push
+git push --tags
+'''
+
 # -----------------------------------------------------------------------------
 # Internal/helper tasks
 # -----------------------------------------------------------------------------
