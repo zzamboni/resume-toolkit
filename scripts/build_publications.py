@@ -249,6 +249,42 @@ def load_publications_options() -> dict:
     return options if isinstance(options, dict) else {}
 
 
+def load_theme_color_vars() -> str:
+    if not PUBS_RESUME_JSON:
+        return ""
+    path = Path(PUBS_RESUME_JSON)
+    if not path.exists():
+        return ""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return ""
+
+    meta = data.get("meta", {})
+    if not isinstance(meta, dict):
+        return ""
+    theme_options = meta.get("themeOptions", {})
+    if not isinstance(theme_options, dict):
+        return ""
+    colors = theme_options.get("colors", {})
+    if not isinstance(colors, dict):
+        return ""
+
+    declarations = []
+    for name, values in colors.items():
+        if not isinstance(name, str) or not name.strip():
+            continue
+        if not isinstance(values, list) or not values:
+            continue
+        light = values[0] if len(values) > 0 and isinstance(values[0], str) and values[0].strip() else None
+        dark = values[1] if len(values) > 1 and isinstance(values[1], str) and values[1].strip() else light
+        if not light:
+            continue
+        declarations.append(f"--color-{name}-light: {light};")
+        declarations.append(f"--color-{name}-dark: {dark};")
+    return "\n  ".join(declarations)
+
+
 def load_generated_publications_entry() -> dict:
     if not PUBS_RESUME_JSON:
         return {}
@@ -631,6 +667,7 @@ def main():
         dev_reload=dev_reload,
         floating_links=parse_floating_links("PUBS_LINKS"),
         resume_name=load_resume_name(),
+        theme_color_vars=load_theme_color_vars(),
     )
 
     OUT_FILE.parent.mkdir(exist_ok=True)

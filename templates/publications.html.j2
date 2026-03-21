@@ -24,6 +24,9 @@
   --color-primary-dark: #fbfbfc;
   --color-secondary-dark: #ccd0d4;
   --color-accent-dark: #00a0d2;
+{% if theme_color_vars %}
+  {{ theme_color_vars }}
+{% endif %}
 
   --color-background: var(--color-background-light);
   --color-dimmed: var(--color-dimmed-light);
@@ -76,6 +79,16 @@ body {
 
   background: var(--color-background);
   color: var(--color-primary);
+}
+
+a,
+a:visited {
+  color: var(--color-accent);
+}
+
+a:hover,
+a:focus {
+  color: var(--color-accent);
 }
 
 .floating-links {
