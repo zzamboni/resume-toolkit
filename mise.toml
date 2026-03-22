@@ -207,8 +207,6 @@ run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$VITA_TOOLKIT_ROOT"
-
 version="$usage_version"
 tag="v$version"
 
