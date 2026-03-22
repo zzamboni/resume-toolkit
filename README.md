@@ -6,31 +6,32 @@
 `resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
 
 -   Resume HTML, using a customized version of the [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even)) theme;
--   Resume Typst/PDF using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) theme;
+-   Resume Typst/PDF using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) theme, automatically fetching company/school logos from [logo.dev](https://logo.dev/);
 -   Standalone publications HTML page (from BibTeX);
 -   Standalone publications PDF (from BibTeX, rendered with Typst);
 -   Aggregated publications BibTeX.
 
-``` mermaid
-flowchart LR
-      A[JSON Resume<br/>resume.json] --> L(( ))
-      B[BibTeX files<br/>publications.bib ...] -. optional .-> L
-      L --> C[resume-toolkit]
-      C --> R(( ))
+It also allows updating your JSONresume file with a list of certifications from [Credly](https://credly.com/) (including badges), a list of publications from BibTeX files, and links to the standalone publications HTML page.
 
-      subgraph CV[CV]
+``` mermaid
+flowchart TD
+      A[JSON Resume<br/>resume.json] --> C[resume-toolkit]
+      B["BibTeX files<br/>publications.bib ...<br/>(optional)"] .-> C
+      C -. update-* commands .-> A
+      
+      subgraph CV[CV outputs]
           D[HTML<br/>vita/index.html]
           E[PDF<br/>vita/resume.pdf]
       end
 
-      subgraph PUBS[Publications]
+      subgraph PUBS[Publications outputs]
           F[HTML<br/>vita/publications/index.html]
           G[PDF<br/>vita/publications/resume-pubs.pdf]
           H[Aggregated BibTeX<br/>vita/publications/resume-pubs.bib]
       end
 
-      R --> CV
-      R --> PUBS
+      C --> CV
+      C --> PUBS
 
       classDef toolkit fill:#22d3ee,color:#0f172a,stroke:#0891b2,stroke-width:2px;
       classDef io fill:#f8fafc,color:#0f172a,stroke:#94a3b8;
@@ -62,13 +63,14 @@ You can find some further samples in the `samples/` directory:
     - [`fetch-logos`](#fetch-logos)
     - [`update-certs`](#update-certs)
     - [`update-pub-numbers`](#update-pub-numbers)
-    - [Other passthrough subcommands](#other-passthrough-subcommands)
+    - [`update-inline-pubs`](#update-inline-pubs)
+    - [Other subcommands](#other-subcommands)
   - [Bibliography configuration](#bibliography-configuration)
   - [Even theme extensions](#even-theme-extensions)
-    - [Icons](#icons)
+    - [Font Awesome Icons](#font-awesome-icons)
     - [Certificate badges and notes](#certificate-badges-and-notes)
     - [Grouping projects by type](#grouping-projects-by-type)
-    - [Sections](#sections)
+    - [Section custom ordering and labels](#section-custom-ordering-and-labels)
       - [Ordering](#ordering)
       - [Custom Labels](#custom-labels)
     - [Table of contents](#table-of-contents)
@@ -250,6 +252,17 @@ Options:
 -   `--html <path>` (defaults to `build/<resume-stem>/vita/publications/index.html`)
 
 
+### `update-inline-pubs`
+
+Replace inline `publications[]` entries in your JSON resume from the BibTeX selection defined by the generated-publications entry.
+
+```sh
+build-resume.sh update-inline-pubs resume.json
+```
+
+Optional BibTeX files can be passed explicitly to override the `bibfiles` configured in `publications[]`. The command keeps the single special `publications[]` entry with `bibfiles` and regenerates all other `publications[]` entries using the JSON Resume schema fields `name`, `publisher`, `releaseDate`, `url`, and `summary`.
+
+
 <a id="org23204b4"></a>
 
 ### Other subcommands
@@ -406,7 +419,7 @@ Example:
 
 The version of jsonresume-theme-even used by this toolkit supports the following additional options (described also in [jsonresume-them-even PR#33](https://github.com/rbardini/jsonresume-theme-even/pull/33)):
 
-### Icons
+### Font Awesome Icons
 
 By default, [Feather icons](https://feathericons.com/) are used for the profiles. You can also use [Font Awesome icons](https://fontawesome.com/) by setting the `.meta.themeOptions.icons` resume field to "fontawesome":
 
