@@ -2,6 +2,54 @@
 
 <a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit"><img alt="Docker Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit?sort=semver"></a>
 
+
+`resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
+
+-   Resume HTML, using a customized version of the [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even)) theme;
+-   Resume Typst/PDF using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) theme;
+-   Standalone publications HTML page (from BibTeX);
+-   Standalone publications PDF (from BibTeX, rendered with Typst);
+-   Aggregated publications BibTeX.
+
+``` mermaid
+flowchart LR
+      A[JSON Resume<br/>resume.json] --> L(( ))
+      B[BibTeX files<br/>publications.bib ...] -. optional .-> L
+      L --> C[resume-toolkit]
+      C --> R(( ))
+
+      subgraph CV[CV]
+          D[HTML<br/>vita/index.html]
+          E[PDF<br/>vita/resume.pdf]
+      end
+
+      subgraph PUBS[Publications]
+          F[HTML<br/>vita/publications/index.html]
+          G[PDF<br/>vita/publications/resume-pubs.pdf]
+          H[Aggregated BibTeX<br/>vita/publications/resume-pubs.bib]
+      end
+
+      R --> CV
+      R --> PUBS
+
+      classDef toolkit fill:#22d3ee,color:#0f172a,stroke:#0891b2,stroke-width:2px;
+      classDef io fill:#f8fafc,color:#0f172a,stroke:#94a3b8;
+      classDef hidden fill:none,stroke:none;
+
+      class C toolkit;
+      class A,B,D,E,F,G,H io;
+      class L,R dot;
+```
+
+You can see a live real example at <https://zzamboni.org/vita/>.
+
+You can find some further samples in the `samples/` directory:
+
+- [`samples/example-resume/`](samples/example-resume): fully synthetic example which shows a variety of features.
+- [`samples/john-doe-brilliantcv/`](samples/john-doe-brilliantcv): the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
+
+---
+
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 **Table of Contents**
 
@@ -9,7 +57,7 @@
   - [Requirements and installation](#requirements-and-installation)
   - [Quick Start](#quick-start)
   - [Output Layout](#output-layout)
-  - [Main Commands](#main-commands)
+  - [Main subcommands](#main-subcommands)
     - [`build` (default)](#build-default)
     - [`fetch-logos`](#fetch-logos)
     - [`update-certs`](#update-certs)
@@ -25,6 +73,7 @@
       - [Custom Labels](#custom-labels)
     - [Table of contents](#table-of-contents)
     - [Floating links](#floating-links)
+    - [PDF theme layout](#pdf-theme-layout)
   - [Environment Variables](#environment-variables)
   - [Under the Hood](#under-the-hood)
     - [Automated Tests](#automated-tests)
@@ -32,21 +81,6 @@
 <!-- markdown-toc end -->
 
 ---
-
-This project provides a reusable build pipeline for generating:
-
--   Resume HTML (from [JSON Resume](https://jsonresume.org/) source, using a customized version of [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even))
--   Resume PDF (from Typst generated from JSON Resume and using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) Typst template)
--   Publications HTML (from BibTeX)
--   Publications PDF (from BibTeX, rendered with Typst using the [pergamon](https://typst.app/universe/package/pergamon) bibliography package)
--   Aggregated publications BibTeX
-
-You can see a live real example at <https://zzamboni.org/vita/>.
-
-You can find some further samples in the `samples/` directory:
-
-- [`samples/example-resume/`](samples/example-resume): fully synthetic example which shows a variety of features.
-- [`samples/john-doe-brilliantcv/`](samples/john-doe-brilliantcv): the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
 
 <a id="orge0cfd3e"></a>
 
@@ -76,24 +110,22 @@ The first time the script runs, it will download the Docker image automatically.
 Build a Resume + publications:
 
 ```sh
-./build-resume.sh resume.json pubs-src/publications.bib
+build-resume.sh resume.json pubs-src/publications.bib
 ```
 
-Build the bundled synthetic example:
+Build the bundled examples:
 
 ```sh
-./build-resume.sh sample/example-resume.json
+build-resume.sh samples/example-resume/example-resume.json
 ```
 
-Build, watch changes, and serve output:
+or
 
 ```sh
-./build-resume.sh resume.json pubs-src/publications.bib --watch --serve
+build-resume.sh samples/john-doe-brilliantcv/john-doe-brilliantcv.json
 ```
 
-Then open:
-
--   `http://localhost:8080`
+Then open <http://localhost:8080>
 
 
 <a id="org1334766"></a>
@@ -106,33 +138,46 @@ Default output base directory:
 
 Generated files:
 
--   `build/<resume-stem>/vita/index.html`
--   `build/<resume-stem>/vita/<resume-stem>.typ`
--   `build/<resume-stem>/vita/<resume-stem>.pdf`
--   `build/<resume-stem>/vita/publications/index.html` (if BibTeX provided)
--   `build/<resume-stem>/vita/publications/<resume-stem>-pubs.pdf` (if BibTeX provided)
--   `build/<resume-stem>/vita/publications/<resume-stem>-pubs.bib` (if BibTeX provided)
+- CV HTML:  `build/<resume-stem>/vita/index.html`
+- CV Typst:  `build/<resume-stem>/vita/<resume-stem>.typ`
+- CV PDF:  `build/<resume-stem>/vita/<resume-stem>.pdf`
+- Publications HTML (if BibTeX provided): `build/<resume-stem>/vita/publications/index.html`
+- Publications PDF (if BibTeX provided): `build/<resume-stem>/vita/publications/<resume-stem>-pubs.pdf`
+- Publications aggregated BibTeX (if BibTeX provided): `build/<resume-stem>/vita/publications/<resume-stem>-pubs.bib`
 
 
 <a id="org8964c26"></a>
 
-## Main Commands
+## Main subcommands
 
+``` sh
+$ build-resume.sh --help
+Usage:
+  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
+  build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
+  build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
+  build-resume.sh update-pub-numbers <resume.json> [--html <path>]
+  build-resume.sh version
+```
 
 <a id="org6cb0f47"></a>
 
 ### `build` (default)
 
+```sh
+build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
+```
+
 These are equivalent:
 
 ```sh
-./build-resume.sh build resume.json pubs-src/publications.bib
-./build-resume.sh resume.json pubs-src/publications.bib
+build-resume.sh build resume.json pubs-src/publications.bib
+build-resume.sh resume.json pubs-src/publications.bib
 ```
 
 Options:
 
--   `--out <dir>`: output base directory
+-   `--out <dir>`: output base directory (default `build/<resume-stem>`)
 -   `--pubs-url <url>`: online publications URL for PDF footer
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
@@ -151,11 +196,7 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
 
 Only one `publications[]` entry may define `bibfiles`. If `--bib` arguments are provided, they take precedence. `bibfiles` entries are resolved relative to the JSON resume file location.
 
-If no source `assets/logos/` directory is found, the pipeline will
-automatically try to populate it by running the logo fetcher. If
-`LOGODEV_TOKEN` is not available, the build continues but emits a warning and
-skips automatic logo download. Use `--no-fetch-logos` to disable both the
-automatic fetch and the warning.
+If no source `assets/logos/` directory is found, the pipeline will automatically try to populate it by running the logo fetcher (see [`fetch-logos`](#orgd64b9f2)). If `LOGODEV_TOKEN` is not available, the build continues but emits a warning and skips automatic logo download. Use `--no-fetch-logos` to disable both the automatic fetch and the warning.
 
 
 <a id="orgd64b9f2"></a>
@@ -164,10 +205,10 @@ automatic fetch and the warning.
 
 Download company/institution logos from the resume file into `assets/logos/` in your working directory. Uses [logo.dev](https://www.logo.dev/) to fetch logos. You need to create an API key and provide the publishable key in the `LOGODEV_TOKEN` environment variable, or using the `--token` flag.
 
-If matching logo files are found under `assets/logos/`, the `build` step will include them automatically in the generated PDF. You can also provide/update the images by hand with the appropriate name.
+If matching logo files are found under `assets/logos/`, the `build` step will include them automatically in the generated PDF. You can also provide/update the images by hand with the appropriate name (`<company name>.png/jpg/jpeg/svg/webp/gif`).
 
 ```sh
-./build-resume.sh fetch-logos resume.json
+build-resume.sh fetch-logos resume.json
 ```
 
 Options:
@@ -184,7 +225,7 @@ Options:
 Sync certificates from Credly into your JSON resume. This replaces any entries in the `certificates` section of the JSONresume file that have a `url` field pointing to `credly.com`. Other entries are left untouched.
 
 ```sh
-./build-resume.sh update-certs <credly-username> resume.json
+build-resume.sh update-certs <credly-username> resume.json
 ```
 
 Options:
@@ -201,7 +242,7 @@ Options:
 Update publication reference numbers in your JSON resume using the generated publications HTML anchors.
 
 ```sh
-./build-resume.sh update-pub-numbers resume.json
+build-resume.sh update-pub-numbers resume.json
 ```
 
 Options:
@@ -211,22 +252,19 @@ Options:
 
 <a id="org23204b4"></a>
 
-### Other passthrough subcommands
-
-You can also call container entrypoint commands directly, for example:
+### Other subcommands
 
 ```sh
-./build-resume.sh tasks
-./build-resume.sh shell
+build-resume.sh shell
 ```
 
-`tasks` lists the `mise` tasks available inside the container (you can add `--hidden` to see internal tasks), and `shell` gives you an interactive shell inside the container.
+Gives you an interactive shell inside the container.
 
 <a id="bibliography-config"></a>
 
 ## Bibliography configuration
 
-If no BibTeX files are provided on the command line, the pipeline can read them from a special `publications[]` entry in your JSON resume:
+If no BibTeX files are provided on the command line, the pipeline can read them from a special `publications[]` entry in your JSON resume. BibTeX files will be used to produce the standalone publications pages (HTML and PDF):
 
 ```json
 "publications": [
@@ -288,7 +326,7 @@ If `meta.publicationsOptions.links` is unset, the publications HTML page gets th
 ]
 ```
 
-`<publications>` is replaced with the generated publications base filename for the current resume, and `<resume>` is replaced with the main resume file stem. If `links` is present but empty (`[]`), no floating links are rendered. Icon names can be plain Font Awesome names like `file-pdf`, or Font Awesome style strings copied from their site such as `fa-regular fa-file-pdf` or `fa-brands fa-github`.
+`<publications>` is replaced with the generated publications base filename for the current resume, and `<resume>` is replaced with the main resume file stem. If `links` is present but empty (`[]`), no floating links are rendered. Icon names can be plain Font Awesome names like `file-pdf`, or Font Awesome style strings like `fa-regular fa-file-pdf` or `fa-brands fa-github`.
 
 The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
 
@@ -390,7 +428,7 @@ If a certificate entry contains only `name` and optionally `url` but no `issuer`
 
 If the `.meta.themeOptions.projectsByType` is `true`, project entries are rendered as separate sections according to their `type` field, instead of as a single section.
 
-### Sections
+### Section custom ordering and labels
 
 #### Ordering
 
@@ -569,41 +607,10 @@ If you already cloned without submodules:
 git submodule update --init --recursive
 ```
 
-All the `build-resume.sh` functionality is implemented through `mise` tasks inside the container. If you want to run these on your host machine and not inside the container, make sure you have [mise](https://mise.jdx.dev/) installed, then you can check out this repository and initialize the mise environment:
-
-``` sh
-git clone https://github.com/zzamboni/resume-toolkit.git
-cd resume-toolkit
-mise trust .
-mise install
-HUSKY=0 NPM_CONFIG_IGNORE_SCRIPTS=true mise run bootstrap
-```
-
-You can then run the `mise` tasks directly, with the same parameters described above for `build-resume.sh`, e.g.:
-
-``` sh
-mise build resume.json pubs-src/publications.bib --watch --serve
-mise fetch-logos resume.json
-mise update-certs <credly-username> resume.json
-```
-
 You can build the Docker image locally with:
 
 ``` sh
 mise toolkit-image-build
-```
-
-Use `mise tasks --hidden` to see all the tasks, including development and testing:
-
-``` sh
-Name                 Description
-bootstrap            Install/update project dependencies (Python + npm)
-build                Run CV + publications pipeline
-fetch-logos          Fetch company/education logos from JSON resume into /work assets
-test-toolkit         Run toolkit integration tests
-toolkit-image-build  Build standalone toolkit Docker image
-update-certs         Update certificates from credly
-update-pub-numbers   Update publication reference numbers in JSON resume
 ```
 
 <a id="org487a931"></a>
