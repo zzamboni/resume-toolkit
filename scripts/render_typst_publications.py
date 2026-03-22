@@ -109,7 +109,7 @@ def generate_typst_publications(
     output += "    en: metadata.lang.en + (\n"
     output += f'      cv_footer: [ {escape_typst(publications_label)} - #datetime.today().display()'
     if pubs_url:
-        output += f' - #link("{escape_typst(pubs_url)}")[{escape_typst(pubs_url_display)}]'
+        output += f' #"\\n" #link("{escape_typst(pubs_url)}")[{escape_typst(pubs_url_display)}]'
     output += " ],\n"
     output += '      header_quote: "",\n'
     output += "    ),\n"
