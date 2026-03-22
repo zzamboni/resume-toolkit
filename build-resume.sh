@@ -24,6 +24,7 @@ Usage:
   build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh update-pub-numbers <resume.json> [--html <path>]
+  build-resume.sh update-inline-pubs <resume.json> [bibfiles...]
   build-resume.sh version
 
 Examples:
@@ -31,6 +32,7 @@ Examples:
   build-resume.sh fetch-logos resume.json --overwrite --token pk_XXXXXXXXXXXXXXX
   build-resume.sh update-certs zzamboni resume.json
   build-resume.sh update-pub-numbers resume.json
+  build-resume.sh update-inline-pubs resume.json
   build-resume.sh version
 USAGE
 }
@@ -39,7 +41,7 @@ USAGE
 ENTRYPOINT_CMDS=(
   build pipeline shell bash
   tasks version help
-  fetch-logos update-certs update-pub-numbers
+  fetch-logos update-certs update-pub-numbers update-inline-pubs
 )
 
 is_entrypoint_cmd() {

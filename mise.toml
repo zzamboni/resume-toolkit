@@ -167,6 +167,37 @@ cd "$VITA_TOOLKIT_ROOT"
 python scripts/update_pub_numbers.py --json "$resume" --html "$html"
 '''
 
+[tasks.update-inline-pubs]
+description = "Update inline publications in JSON resume from selected BibTeX entries"
+usage = '''
+arg "<resume>" help="JSONresume file to update"
+arg "[bibfiles]" var=#true help="BibTeX files (optional; defaults to bibfiles in publications[] entry)"
+'''
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+workdir="${VITA_WORKDIR:-$PWD}"
+resume="$usage_resume"
+if [[ "$resume" != /* ]]; then
+  resume="$workdir/$resume"
+fi
+
+args=(--json "$resume")
+if [[ -n "${usage_bibfiles:-}" ]]; then
+  read -r -a arr <<< "$usage_bibfiles"
+  for bib in "${arr[@]}"; do
+    if [[ "$bib" != /* ]]; then
+      bib="$workdir/$bib"
+    fi
+    args+=(--bib "$bib")
+  done
+fi
+
+cd "$VITA_TOOLKIT_ROOT"
+python scripts/update_inline_pubs.py "${args[@]}"
+'''
+
 [tasks.release]
 description = "Bump VERSION, create release tag, and push tags"
 usage = '''

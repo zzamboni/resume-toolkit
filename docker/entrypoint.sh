@@ -13,6 +13,7 @@ Usage:
   vita-pipeline fetch-logos <resume.json> [--overwrite] [--dry-run] [--token <token>]
   vita-pipeline update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   vita-pipeline update-pub-numbers <resume.json> [--html <path>]
+  vita-pipeline update-inline-pubs <resume.json> [bibfiles...]
   vita-pipeline tasks
   vita-pipeline version
   vita-pipeline shell
@@ -25,6 +26,7 @@ build              Run CV + publications pipeline
 fetch-logos        Fetch company/education logos from JSON resume into /work assets
 update-certs       Update certificates from Credly
 update-pub-numbers Update publication reference numbers in JSON resume
+update-inline-pubs Update inline publications in JSON resume from selected BibTeX entries
 version            Show toolkit and runtime versions
 TASKS
 }
@@ -260,6 +262,27 @@ run_update_pub_numbers() {
   exec python3 scripts/update_pub_numbers.py --json "$resume_path" --html "$html"
 }
 
+run_update_inline_pubs() {
+  local resume="${1:-}"
+  if [[ -z "$resume" ]]; then
+    echo "Missing resume JSON file" >&2
+    usage
+    return 1
+  fi
+  shift
+
+  local resume_path
+  resume_path="$(resolve_work_path "$resume")"
+  local -a args=(--json "$resume_path")
+  local bib
+  for bib in "$@"; do
+    args+=(--bib "$(resolve_work_path "$bib")")
+  done
+
+  cd "$VITA_TOOLKIT_ROOT"
+  exec python3 scripts/update_inline_pubs.py "${args[@]}"
+}
+
 if [[ $# -eq 0 ]]; then
   show_tasks
   exit 0
@@ -281,6 +304,10 @@ case "$1" in
   update-pub-numbers)
     shift
     run_update_pub_numbers "$@"
+    ;;
+  update-inline-pubs)
+    shift
+    run_update_inline_pubs "$@"
     ;;
   tasks)
     show_tasks
