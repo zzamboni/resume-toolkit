@@ -21,17 +21,17 @@ usage() {
   cat <<'USAGE'
 Usage:
   build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
-  build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run]
+  build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh update-pub-numbers <resume.json> [--html <path>]
-  build-resume.sh <subcommand> [args...] (use 'build-resume.sh tasks' to see list)
+  build-resume.sh version
 
 Examples:
   build-resume.sh resume.json pubs.bib --watch --serve
-  build-resume.sh fetch-logos resume.json --overwrite
+  build-resume.sh fetch-logos resume.json --overwrite --token pk_XXXXXXXXXXXXXXX
   build-resume.sh update-certs zzamboni resume.json
   build-resume.sh update-pub-numbers resume.json
-  build-resume.sh tasks
+  build-resume.sh version
 USAGE
 }
 
