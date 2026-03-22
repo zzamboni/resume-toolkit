@@ -19,20 +19,17 @@
         "Example Person"
       ],
       "bibfiles": [
-        "publications.bib"
+        "publications-filtered.bib"
+      ],
+      "bibkeywords": [
+        "selected"
       ]
     }
   ],
   "meta": {
     "theme": "jsonresume-theme-even",
-    "themeOptions": {
-      "sectionLabels": {
-        "publications": "Research Output"
-      }
-    },
     "publicationsOptions": {
-      "pubSections": false,
-      "full_standalone_list_title": "Research Output"
+      "inline_in_pdf": true
     }
   }
 }

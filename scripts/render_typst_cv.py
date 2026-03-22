@@ -935,6 +935,14 @@ def get_publications_label(resume_data: Dict[str, Any], fallback: str = "Publica
     return normalize_label(label.strip())
 
 
+def get_standalone_publications_label(resume_data: Dict[str, Any], fallback: str = "Publications") -> str:
+    options = get_publications_options(resume_data)
+    label = options.get("full_standalone_list_title", fallback)
+    if not isinstance(label, str) or not label.strip():
+        return fallback
+    return normalize_label(label.strip())
+
+
 def get_generated_publications_entry(resume_data: Dict[str, Any]) -> Dict[str, Any]:
     publications = resume_data.get("publications")
     if not isinstance(publications, list):

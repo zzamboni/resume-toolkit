@@ -81,6 +81,7 @@ cp "$FIXTURES_DIR/resume-publications-custom-label.json" "$WORK_DIR/fixtures/res
 cp "$FIXTURES_DIR/resume-publications-custom-links.json" "$WORK_DIR/fixtures/resume-publications-custom-links.json"
 cp "$FIXTURES_DIR/resume-publications-no-links.json" "$WORK_DIR/fixtures/resume-publications-no-links.json"
 cp "$FIXTURES_DIR/resume-publications-filtered.json" "$WORK_DIR/fixtures/resume-publications-filtered.json"
+cp "$FIXTURES_DIR/resume-publications-inline-only-filtered.json" "$WORK_DIR/fixtures/resume-publications-inline-only-filtered.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 cp "$FIXTURES_DIR/publications-filtered.bib" "$WORK_DIR/fixtures/publications-filtered.bib"
 
@@ -142,41 +143,48 @@ assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publicatio
 assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#let publications-ref-full = false'
 assert_contains "$WORK_DIR/build/out-inline-config/vita/resume-inline-publications-config.typ" '#let publications-key-list = \("example2024paper",\)'
 
-echo "==> Test 7: publications filtered by bibkeywords"
+echo "==> Test 7: publications filtered by bibkeywords when full_standalone_list is false"
 run_wrapper build fixtures/resume-publications-filtered.json --out build/out-filtered >/dev/null
 assert_file "$WORK_DIR/build/out-filtered/vita/publications/resume-publications-filtered-pubs.bib"
 assert_contains "$WORK_DIR/build/out-filtered/vita/publications/resume-publications-filtered-pubs.bib" '@article\{example2024paper,'
 assert_not_contains "$WORK_DIR/build/out-filtered/vita/publications/resume-publications-filtered-pubs.bib" '@article\{example2023paper,'
 assert_contains "$WORK_DIR/build/out-filtered/vita/resume-publications-filtered.typ" '#let publications-key-list = \(\)'
 
-echo "==> Test 8: unsectioned publications output"
+echo "==> Test 8: inline filtering with full standalone publications list"
+run_wrapper build fixtures/resume-publications-inline-only-filtered.json --out build/out-inline-only-filtered >/dev/null
+assert_contains "$WORK_DIR/build/out-inline-only-filtered/vita/publications/resume-publications-inline-only-filtered-pubs.bib" '@article\{example2024paper,'
+assert_contains "$WORK_DIR/build/out-inline-only-filtered/vita/publications/resume-publications-inline-only-filtered-pubs.bib" '@article\{example2023paper,'
+assert_contains "$WORK_DIR/build/out-inline-only-filtered/vita/resume-publications-inline-only-filtered-vita.bib" '@article\{example2024paper,'
+assert_not_contains "$WORK_DIR/build/out-inline-only-filtered/vita/resume-publications-inline-only-filtered-vita.bib" '@article\{example2023paper,'
+
+echo "==> Test 9: unsectioned publications output"
 run_wrapper build fixtures/resume-publications-unsectioned.json --out build/out-unsectioned >/dev/null
 assert_file "$WORK_DIR/build/out-unsectioned/vita/publications/index.html"
 assert_file "$WORK_DIR/build/out-unsectioned/vita/publications/resume-publications-unsectioned-pubs.pdf"
 assert_contains "$WORK_DIR/build/out-unsectioned/vita/publications/index.html" "Example Person"
 assert_not_contains "$WORK_DIR/build/out-unsectioned/vita/publications/index.html" 'h3 id='
 
-echo "==> Test 9: default unsectioned publications output"
+echo "==> Test 10: default unsectioned publications output"
 run_wrapper build fixtures/resume-publications-unsectioned-default.json --out build/out-unsectioned-default >/dev/null
 assert_file "$WORK_DIR/build/out-unsectioned-default/vita/publications/index.html"
 assert_file "$WORK_DIR/build/out-unsectioned-default/vita/publications/resume-publications-unsectioned-default-pubs.pdf"
 assert_contains "$WORK_DIR/build/out-unsectioned-default/vita/publications/index.html" "Example Person"
 assert_not_contains "$WORK_DIR/build/out-unsectioned-default/vita/publications/index.html" 'h3 id='
 
-echo "==> Test 10: custom publications sections and titles"
+echo "==> Test 11: custom publications sections and titles"
 run_wrapper build fixtures/resume-publications-custom-sections.json --out build/out-custom-sections >/dev/null
 assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
 
-echo "==> Test 11: custom publications label"
+echo "==> Test 12: custom publications label"
 run_wrapper build fixtures/resume-publications-custom-label.json --out build/out-custom-label >/dev/null
 assert_file "$WORK_DIR/build/out-custom-label/vita/publications/index.html"
 assert_file "$WORK_DIR/build/out-custom-label/vita/publications/resume-publications-custom-label-pubs.pdf"
 assert_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Research Output'
 assert_not_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Example Person &mdash; Publications'
 
-echo "==> Test 12: custom publications floating links"
+echo "==> Test 13: custom publications floating links"
 run_wrapper build fixtures/resume-publications-custom-links.json --out build/out-custom-links >/dev/null
 assert_file "$WORK_DIR/build/out-custom-links/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.pdf"'

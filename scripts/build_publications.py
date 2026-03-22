@@ -221,9 +221,8 @@ def load_publications_label() -> str:
         data = json.loads(path.read_text(encoding="utf-8"))
         label = (
             data.get("meta", {})
-            .get("themeOptions", {})
-            .get("sectionLabels", {})
-            .get("publications")
+            .get("publicationsOptions", {})
+            .get("full_standalone_list_title", "Publications")
         )
         if isinstance(label, str) and label.strip():
             return label.strip()
@@ -247,6 +246,10 @@ def load_publications_options() -> dict:
         return {}
     options = meta.get("publicationsOptions", {})
     return options if isinstance(options, dict) else {}
+
+
+def full_standalone_list_enabled() -> bool:
+    return bool(load_publications_options().get("full_standalone_list", True))
 
 
 def load_theme_color_vars() -> str:
@@ -538,6 +541,9 @@ def resolve_entry_filters() -> tuple[set[str], set[str]]:
 
 
 def filter_bib_entries(raw_entries, raw_entry_text_by_key):
+    if full_standalone_list_enabled():
+        return raw_entries, raw_entry_text_by_key
+
     selected_keys, selected_keywords = resolve_entry_filters()
     if not selected_keys and not selected_keywords:
         return raw_entries, raw_entry_text_by_key

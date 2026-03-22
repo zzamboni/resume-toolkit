@@ -285,8 +285,9 @@ If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the ag
     -   `ref-style: "ieee"`
     -   `ref-full: true`
     -   `ref-sorting: "ydnt"`
--   `bibentries` can be set on the generated-publications `publications[]` entry to select explicit BibTeX entry keys for the aggregated bibliography and inline PDF bibliography.
--   `bibkeywords` can be set on the generated-publications `publications[]` entry to include entries whose BibTeX `keywords` contain any of the listed values.
+-   `bibentries` can be set on the generated-publications `publications[]` entry to select explicit BibTeX entry keys for inline PDF publications, and also for standalone publications when `full_standalone_list` is `false`.
+-   `bibkeywords` can be set on the generated-publications `publications[]` entry to include entries whose BibTeX `keywords` contain any of the listed values for inline PDF publications, and also for standalone publications when `full_standalone_list` is `false`.
+-   `full_standalone_list` defaults to `true`, meaning the standalone publications HTML/PDF pages render the full list from `bibfiles` while the inline PDF bibliography can still be filtered by `bibentries` / `bibkeywords`. Set it to `false` to apply the same filtering to the standalone publications outputs.
 -   You can also pass a dictionary to configure the inline bibliography rendering, for example:
 
 ```json
@@ -308,6 +309,7 @@ You can also configure publication sectioning for both HTML and PDF via `meta.pu
 -   `pubSections: false` or unset: no sectioning (single publications list)
 -   `pubSectionTitles`: optional custom titles for section keys
 -   `links`: optional floating action links for the publications HTML page
+-   `full_standalone_list_title`: optional title for the standalone publications HTML/PDF pages (defaults to `Publications`)
 
 If `meta.publicationsOptions.links` is unset, the publications HTML page gets these default floating links:
 

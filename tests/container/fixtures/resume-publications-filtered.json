@@ -29,7 +29,8 @@
   "meta": {
     "theme": "jsonresume-theme-even",
     "publicationsOptions": {
-      "inline_in_pdf": true
+      "inline_in_pdf": true,
+      "full_standalone_list": false
     }
   }
 }

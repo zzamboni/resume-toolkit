@@ -7,7 +7,7 @@ from pathlib import Path
 from render_typst_cv import (
     escape_typst,
     generate_metadata,
-    get_publications_label,
+    get_standalone_publications_label,
     get_section_style_options,
     render_pergamon_bibliography,
     render_pergamon_setup,
@@ -22,7 +22,7 @@ def generate_typst_publications(
     pubs_url: str = "",
 ) -> str:
     resume_name = str(resume_data.get("basics", {}).get("name", "Publications")).strip() or "Publications"
-    publications_label = get_publications_label(resume_data)
+    publications_label = get_standalone_publications_label(resume_data)
     pubs_url_display = pubs_url.removeprefix("https://").removeprefix("http://")
 
     style_config = {

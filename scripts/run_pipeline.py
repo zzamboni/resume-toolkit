@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -213,6 +214,108 @@ def get_generated_publications_entry(data: dict) -> dict | None:
             "Multiple publications entries define bibfiles; only one generated-publications entry is allowed"
         )
     return entries[0] if entries else None
+
+
+def get_publication_entry_filters(data: dict) -> tuple[set[str], set[str]]:
+    publication = get_generated_publications_entry(data) or {}
+    raw_keys = publication.get("bibentries", []) if isinstance(publication, dict) else []
+    raw_keywords = publication.get("bibkeywords", []) if isinstance(publication, dict) else []
+    selected_keys = {
+        str(key).strip()
+        for key in raw_keys
+        if isinstance(key, str) and key.strip()
+    }
+    selected_keywords = {
+        str(keyword).strip().lower()
+        for keyword in raw_keywords
+        if isinstance(keyword, str) and keyword.strip()
+    }
+    return selected_keys, selected_keywords
+
+
+def full_standalone_list_enabled(data: dict) -> bool:
+    return bool(publications_options(data).get("full_standalone_list", True))
+
+
+def extract_raw_bib_entries(bibtex_source: str) -> dict[str, str]:
+    raw_entries: dict[str, str] = {}
+    entry_start_re = re.compile(r"@([A-Za-z][A-Za-z0-9_-]*)\s*\{")
+    pos = 0
+
+    while True:
+        match = entry_start_re.search(bibtex_source, pos)
+        if not match:
+            break
+
+        brace_start = match.end() - 1
+        key_start = match.end()
+        key_end = bibtex_source.find(",", key_start)
+        if key_end == -1:
+            pos = match.end()
+            continue
+
+        entry_key = bibtex_source[key_start:key_end].strip()
+        if not entry_key:
+            pos = match.end()
+            continue
+
+        depth = 0
+        end = None
+        for idx in range(brace_start, len(bibtex_source)):
+            ch = bibtex_source[idx]
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = idx + 1
+                    break
+
+        if end is None:
+            pos = match.end()
+            continue
+
+        raw_entries[entry_key] = bibtex_source[match.start():end].strip()
+        pos = end
+
+    return raw_entries
+
+
+def extract_entry_keywords(raw_entry: str) -> set[str]:
+    for pattern in (
+        r'\bkeywords\s*=\s*\{([^}]*)\}',
+        r'\bkeywords\s*=\s*"([^"]*)"',
+    ):
+        match = re.search(pattern, raw_entry, flags=re.IGNORECASE | re.DOTALL)
+        if match:
+            return {
+                keyword.strip().lower()
+                for keyword in match.group(1).split(",")
+                if keyword.strip()
+            }
+    return set()
+
+
+def write_filtered_inline_bib(bib_files: list[Path], out_path: Path, data: dict) -> bool:
+    selected_keys, selected_keywords = get_publication_entry_filters(data)
+    if not selected_keys and not selected_keywords:
+        return False
+
+    included_entries: list[str] = []
+    for bib in bib_files:
+        raw_entries = extract_raw_bib_entries(bib.read_text(encoding="utf-8"))
+        for entry_key, raw_entry in raw_entries.items():
+            entry_keywords = extract_entry_keywords(raw_entry)
+            include = False
+            if entry_key in selected_keys:
+                include = True
+            if selected_keywords and entry_keywords.intersection(selected_keywords):
+                include = True
+            if include:
+                included_entries.append(raw_entry)
+
+    out_path.write_text("\n\n".join(included_entries).strip() + ("\n" if included_entries else ""), encoding="utf-8")
+    return True
 
 
 def is_remote_reference(value: str) -> bool:
@@ -565,7 +668,11 @@ def main() -> int:
                 raise SystemExit(f"Aggregated bib not found: {agg_bib}")
 
             if inline_publications_requested:
-                shutil.copy2(agg_bib, inline_bib_path)
+                wrote_filtered_inline_bib = False
+                if full_standalone_list_enabled(data):
+                    wrote_filtered_inline_bib = write_filtered_inline_bib(sorted_bibs, inline_bib_path, data)
+                if not wrote_filtered_inline_bib:
+                    shutil.copy2(agg_bib, inline_bib_path)
                 inline_bib_for_typst = inline_bib_name
 
             pubs_typ = out_pubs / pubs_typ_name
