@@ -38,7 +38,6 @@ sources = [
   "templates/publications.html.j2",
   "assets/profile/**/*",
   "assets/logos/**/*",
-  "pubs-assets/**/*",
   "themes/jsonresume-theme-even/**/*",
   "*.json",
 ]
@@ -274,7 +273,6 @@ sources = [
   "requirements.txt",
   "scripts/*",
   "templates/*",
-  "pubs-assets/**/*",
   "assets/**/*",
   "themes/jsonresume-theme-even/**/*",
   "docker/*",
