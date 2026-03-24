@@ -715,9 +715,12 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
         url = cert.get("url", "")
         image_url = cert.get("image", "")
 
-        if "See full list" in name:
+        is_note = bool(name) and not issuer and not date and not image_url
+        if is_note:
             if url:
-                output += f'Full list available at #link("{url}")[Credly]\n\n'
+                output += f'#link("{url}")[{process_text(name)}]\n\n'
+            else:
+                output += f'{process_text(name)}\n\n'
             continue
 
         local_image = None
@@ -1241,6 +1244,24 @@ def render_publications(
         return ""
 
     output = render_section_heading(label, section_style)
+    regular_publications: List[Dict[str, Any]] = []
+
+    for pub in publications:
+        name = pub.get("name", "")
+        publisher = pub.get("publisher", "")
+        release_date = pub.get("releaseDate", "")
+        url = pub.get("url", "")
+        summary = pub.get("summary", "")
+
+        is_note = bool(name) and ("bibfiles" in pub or (not publisher and not release_date and not summary))
+        if is_note:
+            if url:
+                output += f'#link("{url}")[{process_text(name)}]\n\n'
+            else:
+                output += f'{process_text(name)}\n\n'
+            continue
+
+        regular_publications.append(pub)
 
     if inline_bib_path and inline_publications_config is not None:
         output += render_pergamon_bibliography(
@@ -1251,7 +1272,7 @@ def render_publications(
         )
         return output
 
-    for pub in publications:
+    for pub in regular_publications:
         name = pub.get("name", "")
         publisher = pub.get("publisher", "")
         release_date = pub.get("releaseDate", "")
@@ -1274,7 +1295,6 @@ def render_publications(
         output += ')\n\n'
 
     return output
-
 
 def render_languages(languages: List[Dict[str, Any]], label: str = "Languages",
                      section_style: Optional[Dict[str, Any]] = None) -> str:
