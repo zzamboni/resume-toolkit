@@ -6,7 +6,9 @@ from pathlib import Path
 
 from render_typst_cv import (
     escape_typst,
+    format_footer_url,
     generate_metadata,
+    get_pdf_theme_url,
     get_standalone_publications_label,
     get_section_style_options,
     render_pergamon_bibliography,
@@ -23,7 +25,8 @@ def generate_typst_publications(
 ) -> str:
     resume_name = str(resume_data.get("basics", {}).get("name", "Publications")).strip() or "Publications"
     publications_label = get_standalone_publications_label(resume_data)
-    pubs_url_display = pubs_url.removeprefix("https://").removeprefix("http://")
+    pubs_url = pubs_url or get_pdf_theme_url(resume_data, "pubs_url")
+    pubs_url_resolved, pubs_url_display = format_footer_url(pubs_url) if pubs_url else ("", "")
 
     style_config = {
         "ref-style": "ieee",

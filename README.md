@@ -155,7 +155,7 @@ Generated files:
 ``` sh
 $ build-resume.sh --help
 Usage:
-  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
+  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
   build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh update-pub-numbers <resume.json> [--html <path>]
@@ -167,7 +167,7 @@ Usage:
 ### `build` (default)
 
 ```sh
-build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos]
+build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
 ```
 
 These are equivalent:
@@ -180,7 +180,8 @@ build-resume.sh resume.json pubs-src/publications.bib
 Options:
 
 -   `--out <dir>`: output base directory (default `build/<resume-stem>`)
--   `--pubs-url <url>`: online publications URL for PDF footer
+-   `--pubs-url <url>`: online publications URL for standalone publications PDF footer
+-   `--cv-url <url>`: online CV URL for main resume PDF footer
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
 -   `--no-fetch-logos`: disable automatic logo fetching when `assets/logos/` is missing
@@ -562,6 +563,13 @@ At the `meta.pdfthemeOptions` level, you can also set `visible_urls` to
 control where compact visible URLs are shown in the PDF output. It defaults
 to `["notes"]`. Supported values are `notes`, `profiles`, `projects`,
 `all`, and `none`.
+
+You can also set footer URLs at the `meta.pdfthemeOptions` level:
+
+- `pubs_url`: URL shown in the footer of the standalone publications PDF
+- `cv_url`: URL shown in the footer of the main CV PDF
+
+Command-line `--pubs-url` and `--cv-url` values override these config entries.
 
 If `highlighted` or `letters` are set, they are passed explicitly to
 `#cv-section(...)`. If they are omitted, nothing is passed and

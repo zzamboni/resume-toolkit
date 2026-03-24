@@ -20,7 +20,7 @@ port_in_use() {
 usage() {
   cat <<'USAGE'
 Usage:
-  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--watch] [--serve] [--no-fetch-logos] [--token LOGODEV_TOKEN]
+  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--token LOGODEV_TOKEN]
   build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh update-pub-numbers <resume.json> [--html <path>]

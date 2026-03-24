@@ -185,6 +185,17 @@ def get_pdf_theme_layout_overrides(resume_data: Dict[str, Any]) -> Dict[str, Any
     return layout
 
 
+def get_pdf_theme_url(resume_data: Dict[str, Any], key: str) -> str:
+    value = get_pdf_theme_options(resume_data).get(key, "")
+    return value.strip() if isinstance(value, str) else ""
+
+
+def format_footer_url(url: str) -> tuple[str, str]:
+    resolved = resolve_pdf_url(url)
+    display = resolved.removeprefix("https://").removeprefix("http://")
+    return resolved, display
+
+
 def coerce_bool(value: Any) -> bool:
     if isinstance(value, bool):
         return value
@@ -494,6 +505,13 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
     pdf_theme_layout = deep_merge_dicts(DEFAULT_PDF_THEME_LAYOUT, layout_overrides)
     layout_str = typst_value(pdf_theme_layout)
 
+    cv_url = get_pdf_theme_url(resume_data, "cv_url")
+    cv_footer = '      cv_footer: [ Curriculum Vitae - #datetime.today().display()'
+    if cv_url:
+        cv_url_resolved, cv_url_display = format_footer_url(cv_url)
+        cv_footer += f' #"\n" #link("{escape_typst(cv_url_resolved)}")[{escape_typst(cv_url_display)}]'
+    cv_footer += ' ],'
+
     metadata = f'''#let metadata = (
   language: "en",
   name: "{escape_typst(name)}",
@@ -525,7 +543,7 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
       activities: "Professional Activities",
       languages: "Languages",
       date_in_present: "Present",
-      cv_footer: [ Curriculum Vitae - #datetime.today().display() ],
+{cv_footer}
       header_quote: "{escape_typst(label)}",
     ),
   ),
@@ -1742,10 +1760,22 @@ def main():
 
     global SITE_URL
     meta = resume_data.get("meta", {}) if isinstance(resume_data, dict) else {}
+    if not isinstance(meta, dict):
+        meta = {}
+        if isinstance(resume_data, dict):
+            resume_data["meta"] = meta
     site = meta.get("site", {}) if isinstance(meta, dict) else {}
     if isinstance(site, dict):
         site_url = site.get("url", "")
         SITE_URL = site_url.strip() if isinstance(site_url, str) else ""
+
+    cv_url_override = os.environ.get("VITA_CV_URL", "").strip()
+    if cv_url_override:
+        pdf_opts = meta.get("pdfthemeOptions")
+        if not isinstance(pdf_opts, dict):
+            pdf_opts = {}
+            meta["pdfthemeOptions"] = pdf_opts
+        pdf_opts["cv_url"] = cv_url_override
 
     assets_dir = Path("assets")
     source_assets_dir = Path(os.environ.get("VITA_ASSETS_DIR", "assets"))

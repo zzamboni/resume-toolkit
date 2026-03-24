@@ -70,6 +70,11 @@ def parse_args() -> argparse.Namespace:
         help="Online publications URL used in generated publications PDF footer",
     )
     parser.add_argument(
+        "--cv-url",
+        default="",
+        help="Online CV URL used in generated CV PDF footer",
+    )
+    parser.add_argument(
         "--no-fetch-logos",
         action="store_true",
         help="Disable automatic logo fetching when no source logo directory is found",
@@ -202,6 +207,16 @@ def normalize_resume(src: Path, dst: Path) -> dict:
 def publications_options(data: dict) -> dict:
     options = data.get("meta", {}).get("publicationsOptions", {})
     return options if isinstance(options, dict) else {}
+
+
+def pdftheme_options(data: dict) -> dict:
+    options = data.get("meta", {}).get("pdfthemeOptions", {})
+    return options if isinstance(options, dict) else {}
+
+
+def pdftheme_url(data: dict, key: str) -> str:
+    value = pdftheme_options(data).get(key, "")
+    return value.strip() if isinstance(value, str) else ""
 
 
 def get_generated_publications_entry(data: dict) -> dict | None:
@@ -571,8 +586,11 @@ def main() -> int:
 
     state_dir = out_base / ".pipeline-state" / json_stem
     state_dir.mkdir(parents=True, exist_ok=True)
+
     normalized_json = state_dir / f"{json_stem}.normalized.json"
     data = normalize_resume(json_file, normalized_json)
+    effective_pubs_url = args.pubs_url or pdftheme_url(data, "pubs_url")
+    effective_cv_url = args.cv_url or pdftheme_url(data, "cv_url")
     resolve_sectioning_config(publications_options(data))
 
     bib_files = resolve_bib_files(args.bib, data, json_dir, workdir)
@@ -683,7 +701,7 @@ def main() -> int:
                     str(normalized_json),
                     pubs_bib_name,
                     str(pubs_typ),
-                    args.pubs_url,
+                    effective_pubs_url,
                 ]
             )
 
@@ -697,7 +715,7 @@ def main() -> int:
                 f"STR:pubs_typ_name={pubs_typ_name}",
                 f"STR:pubs_pdf_name={pubs_pdf_name}",
                 f"STR:resume_name={resume_name}",
-                f"STR:pubs_url={args.pubs_url}",
+                f"STR:pubs_url={effective_pubs_url}",
             )
             pubs_pdf_stamp = state_dir / "pubs-pdf.sha"
             if needs_rebuild(pubs_pdf, pubs_pdf_stamp, pubs_pdf_hash):
@@ -721,6 +739,7 @@ def main() -> int:
         f"STR:cv_typ_target={cv_typ}",
         f"STR:inline_publications_requested={str(inline_publications_requested).lower()}",
         f"STR:inline_bib_for_typst={inline_bib_for_typst}",
+        f"STR:cv_url={effective_cv_url}",
     ]
     if inline_bib_for_typst:
         cv_typ_hash_args.append(f"FILE:{inline_bib_path}")
@@ -733,6 +752,7 @@ def main() -> int:
             {
                 "VITA_ASSETS_DIR": str(assets_source_dir),
                 "VITA_INLINE_PUBLICATIONS_BIB": inline_bib_for_typst,
+                "VITA_CV_URL": effective_cv_url,
             }
         )
         run_command(
