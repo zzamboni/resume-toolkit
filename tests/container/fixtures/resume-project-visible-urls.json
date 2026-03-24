@@ -1,0 +1,23 @@
+{
+  "basics": {
+    "name": "Example Person",
+    "label": "Software Engineer",
+    "email": "example@example.com",
+    "url": "https://example.com"
+  },
+  "projects": [
+    {
+      "name": "Example Project",
+      "entity": "Example Labs",
+      "url": "https://example.com/project",
+      "startDate": "2024-01-01",
+      "description": "Project with a visible URL in the PDF output."
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even",
+    "pdfthemeOptions": {
+      "visible_urls": ["projects"]
+    }
+  }
+}

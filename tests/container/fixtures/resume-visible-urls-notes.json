@@ -1,0 +1,28 @@
+{
+  "basics": {
+    "name": "Example Person",
+    "label": "Software Engineer",
+    "email": "example@example.com",
+    "url": "https://example.com"
+  },
+  "publications": [
+    {
+      "name": "Full list online",
+      "url": "publications/",
+      "authors": ["Example Person"],
+      "bibfiles": ["publications.bib"]
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even",
+    "site": {
+      "url": "https://example.com/vita/"
+    },
+    "pdfthemeOptions": {
+      "visible_urls": ["notes"]
+    },
+    "publicationsOptions": {
+      "inline_in_pdf": true
+    }
+  }
+}

@@ -38,7 +38,8 @@ def resolve_pdf_url(url: str) -> str:
     return urljoin(SITE_URL, url)
 
 
-def convert_markdown_to_typst(text: str) -> str:
+def convert_markdown_to_typst(text: str, *, resume_data: Optional[Dict[str, Any]] = None,
+                             visible_url_category: Optional[str] = None) -> str:
     """Convert Markdown formatting to Typst markup."""
     if not text:
         return ""
@@ -47,7 +48,10 @@ def convert_markdown_to_typst(text: str) -> str:
         link_text = match.group(1)
         url = resolve_pdf_url(match.group(2))
         link_text_processed = convert_markdown_inline(link_text)
-        return f'#link("{resolve_pdf_url(url)}")[{link_text_processed}]'
+        rendered = f'#link("{url}")[{link_text_processed}]'
+        if resume_data is not None and visible_url_category:
+            rendered += visible_url_suffix(resume_data, visible_url_category, url)
+        return rendered
 
     text = re.sub(r'\[(.+?)\]\(([^)]+)\)', replace_link, text)
     text = convert_markdown_inline(text)
@@ -76,11 +80,16 @@ def escape_typst(text: str) -> str:
     return text
 
 
-def process_text(text: str) -> str:
+def process_text(text: str, *, resume_data: Optional[Dict[str, Any]] = None,
+                 visible_url_category: Optional[str] = None) -> str:
     """Process text: convert markdown to Typst."""
     if not text:
         return ""
-    return convert_markdown_to_typst(text)
+    return convert_markdown_to_typst(
+        text,
+        resume_data=resume_data,
+        visible_url_category=visible_url_category,
+    )
 
 
 PROJECT_SECTION_PREFIX = "projects:"
@@ -196,6 +205,54 @@ def get_section_style_options(resume_data: Dict[str, Any]) -> Dict[str, Any]:
 
 def show_summary_title(resume_data: Dict[str, Any]) -> bool:
     return coerce_bool(get_pdf_theme_layout_overrides(resume_data).get("summary_title", False))
+
+
+def get_visible_url_categories(resume_data: Dict[str, Any]) -> set[str]:
+    value = get_pdf_theme_options(resume_data).get("visible_urls", ["notes"])
+    if value is None:
+        return {"notes"}
+    if isinstance(value, str):
+        values = [value]
+    elif isinstance(value, list):
+        values = [item for item in value if isinstance(item, str)]
+    else:
+        return {"notes"}
+    normalized = {item.strip().lower() for item in values if item.strip()}
+    if not normalized:
+        return set()
+    if "none" in normalized:
+        return set()
+    return normalized
+
+
+def should_show_visible_url(resume_data: Dict[str, Any], category: str) -> bool:
+    categories = get_visible_url_categories(resume_data)
+    return "all" in categories or category in categories
+
+
+def compact_display_url(url: str) -> str:
+    resolved = resolve_pdf_url(url)
+    if not resolved:
+        return ""
+    parsed = urlparse(resolved)
+    if parsed.scheme in {"mailto", "tel"}:
+        return resolved
+    display = resolved
+    if parsed.scheme in {"http", "https"}:
+        display = resolved[len(parsed.scheme) + 3:]
+    return display[:-1] if display.endswith("/") else display
+
+
+def visible_url_suffix(resume_data: Dict[str, Any], category: str, url: str, *, typst: bool = True) -> str:
+    if not should_show_visible_url(resume_data, category):
+        return ""
+    resolved = resolve_pdf_url(url)
+    display = compact_display_url(url)
+    if not display:
+        return ""
+    if typst:
+        return f' #link("{resolved}")[#text(size: 9pt, fill: rgb("#666666"))[({escape_typst(display)})]]'
+    return f' ({display})'
 
 
 def deep_merge_dicts(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
@@ -412,8 +469,8 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
         personal_info.append(_personal_info_line('phone', escape_typst(phone)))
     if url:
         url_display = url.replace("https://", "").replace("http://", "")
-        # personal_info.append(_personal_info_line('homepage', url_display))
-        personal_info.append(_personal_info_custom('homepage', 'home', url_display, url))
+        url_display += visible_url_suffix(resume_data, "profiles", url, typst=False)
+        personal_info.append(_personal_info_custom('homepage', 'home', url_display, resolve_pdf_url(url)))
     if location_text:
         personal_info.append(_personal_info_line('location', escape_typst(location_text)))
 
@@ -425,10 +482,11 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
         networkIcon = profile.get("networkIcon", None)
         url = profile.get("url", None)
         if username:
+            text_value = username + visible_url_suffix(resume_data, "profiles", url or "", typst=False)
             if network in ["linkedin", "github"]:
-                personal_info.append(_personal_info_line(network, username))
+                personal_info.append(_personal_info_line(network, text_value))
             else:
-                personal_info.append(_personal_info_custom(network, networkIcon, username, url))
+                personal_info.append(_personal_info_custom(network, networkIcon, text_value, resolve_pdf_url(url) if url else None))
     personal_str = ",\n".join(personal_info)
     layout_overrides = dict(get_pdf_theme_layout_overrides(resume_data))
     layout_overrides.pop("highlighted", None)
@@ -715,7 +773,7 @@ def render_skills(skills: List[Dict[str, Any]], label: str = "Skills",
     return output
 
 
-def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Path, assets_dir: Path,
+def render_certificates(resume_data: Dict[str, Any], certificates: List[Dict[str, Any]], base_output_dir: Path, assets_dir: Path,
                         label: str = "Certificates",
                         section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render certificates using brilliant-cv."""
@@ -735,7 +793,7 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
         is_note = bool(name) and not issuer and not date and not image_url
         if is_note:
             if url:
-                output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]\n\n'
+                output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]{visible_url_suffix(resume_data, "notes", url)}\n\n'
             else:
                 output += f'{process_text(name)}\n\n'
             continue
@@ -830,7 +888,7 @@ def render_awards(awards: List[Dict[str, Any]], label: str = "Awards",
     return output
 
 
-def render_projects(projects: List[Dict[str, Any]], label: str = "Projects",
+def render_projects(resume_data: Dict[str, Any], projects: List[Dict[str, Any]], label: str = "Projects",
                     section_style: Optional[Dict[str, Any]] = None) -> str:
     """Render projects using brilliant-cv."""
     if not projects:
@@ -852,7 +910,7 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects",
 
         if not name:
             if description:
-                output += f"{process_text(description)}\n\n"
+                output += f"{process_text(description, resume_data=resume_data, visible_url_category='notes')}\n\n"
             continue
 
         date_range = format_date_range(start, end) if start else ""
@@ -873,7 +931,7 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects",
         output += f'  metadata: metadata_alt,\n'
         output += f'  title: ['
         if url:
-            output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]'
+            output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]{visible_url_suffix(resume_data, "projects", url)}'
         else:
             output += process_text(name)
         output += '],\n'
@@ -1273,7 +1331,7 @@ def render_publications(
         is_note = bool(name) and ("bibfiles" in pub or (not publisher and not release_date and not summary))
         if is_note:
             if url:
-                output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]\n\n'
+                output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]{visible_url_suffix(resume_data, "notes", url)}\n\n'
             else:
                 output += f'{process_text(name)}\n\n'
             continue
@@ -1438,19 +1496,19 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
                     if not items:
                         continue
                     if type_key is None:
-                        output += render_projects(items, label_for("projects", "Projects"), section_style=section_style)
+                        output += render_projects(resume_data, items, label_for("projects", "Projects"), section_style=section_style)
                     else:
                         label_key = f"{PROJECT_SECTION_PREFIX}{type_key}"
-                        output += render_projects(items, label_for(label_key, str(type_key)), section_style=section_style)
+                        output += render_projects(resume_data, items, label_for(label_key, str(type_key)), section_style=section_style)
                 continue
 
             if projects_by_type and has_project_overrides:
                 typeless = [p for p in projects if not p.get("type")]
                 if typeless:
-                    output += render_projects(typeless, label_for("projects", "Projects"), section_style=section_style)
+                    output += render_projects(resume_data, typeless, label_for("projects", "Projects"), section_style=section_style)
                 continue
 
-            output += render_projects(projects, label_for("projects", "Projects"), section_style=section_style)
+            output += render_projects(resume_data, projects, label_for("projects", "Projects"), section_style=section_style)
             continue
         if isinstance(section, str) and section.startswith(PROJECT_SECTION_PREFIX):
             if not projects_by_type:
@@ -1461,7 +1519,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
             items = [p for p in projects if p.get("type") == type_key]
             if not items:
                 continue
-            output += render_projects(items, label_for(section, type_key), section_style=section_style)
+            output += render_projects(resume_data, items, label_for(section, type_key), section_style=section_style)
             continue
         if section == "awards":
             output += render_awards(
@@ -1472,6 +1530,7 @@ def render_sections(resume_data: Dict[str, Any], base_output_dir: Path, assets_d
             continue
         if section == "certificates":
             output += render_certificates(
+                resume_data,
                 resume_data.get("certificates", []),
                 base_output_dir,
                 assets_dir,

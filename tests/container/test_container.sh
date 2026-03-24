@@ -82,6 +82,9 @@ cp "$FIXTURES_DIR/resume-publications-custom-links.json" "$WORK_DIR/fixtures/res
 cp "$FIXTURES_DIR/resume-publications-no-links.json" "$WORK_DIR/fixtures/resume-publications-no-links.json"
 cp "$FIXTURES_DIR/resume-publications-filtered.json" "$WORK_DIR/fixtures/resume-publications-filtered.json"
 cp "$FIXTURES_DIR/resume-publications-inline-only-filtered.json" "$WORK_DIR/fixtures/resume-publications-inline-only-filtered.json"
+cp "$FIXTURES_DIR/resume-project-visible-urls.json" "$WORK_DIR/fixtures/resume-project-visible-urls.json"
+cp "$FIXTURES_DIR/resume-visible-urls-notes.json" "$WORK_DIR/fixtures/resume-visible-urls-notes.json"
+cp "$FIXTURES_DIR/resume-visible-urls-project-note.json" "$WORK_DIR/fixtures/resume-visible-urls-project-note.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 cp "$FIXTURES_DIR/publications-filtered.bib" "$WORK_DIR/fixtures/publications-filtered.bib"
 
@@ -176,6 +179,24 @@ run_wrapper build fixtures/resume-publications-custom-sections.json --out build/
 assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
+
+echo "==> Test 11b: project visible URLs in PDF"
+run_wrapper build fixtures/resume-project-visible-urls.json --out build/out-project-visible-urls >/dev/null
+assert_file "$WORK_DIR/build/out-project-visible-urls/vita/resume-project-visible-urls.typ"
+assert_contains "$WORK_DIR/build/out-project-visible-urls/vita/resume-project-visible-urls.typ" '#link\("https://example\.com/project"\)\[Example Project\]'
+assert_contains "$WORK_DIR/build/out-project-visible-urls/vita/resume-project-visible-urls.typ" '#text\(size: 9pt, fill: rgb\("#666666"\)\)\[\(example\.com/project\)\]'
+
+echo "==> Test 11c: note visible URLs in PDF"
+run_wrapper build fixtures/resume-visible-urls-notes.json --out build/out-visible-urls-notes >/dev/null
+assert_file "$WORK_DIR/build/out-visible-urls-notes/vita/resume-visible-urls-notes.typ"
+assert_contains "$WORK_DIR/build/out-visible-urls-notes/vita/resume-visible-urls-notes.typ" '#link\("https://example\.com/vita/publications/"\)\[Full list online\]'
+assert_contains "$WORK_DIR/build/out-visible-urls-notes/vita/resume-visible-urls-notes.typ" '#text\(size: 9pt, fill: rgb\("#666666"\)\)\[\(example\.com/vita/publications\)\]'
+
+echo "==> Test 11d: markdown note visible URLs in PDF"
+run_wrapper build fixtures/resume-visible-urls-project-note.json --out build/out-visible-urls-project-note >/dev/null
+assert_file "$WORK_DIR/build/out-visible-urls-project-note/vita/resume-visible-urls-project-note.typ"
+assert_contains "$WORK_DIR/build/out-visible-urls-project-note/vita/resume-visible-urls-project-note.typ" 'See the #link\("https://example\.com/vita/publications/"\)\[_online publications list_\]'
+assert_contains "$WORK_DIR/build/out-visible-urls-project-note/vita/resume-visible-urls-project-note.typ" '#link\("https://example\.com/vita/publications/"\)\[#text\(size: 9pt, fill: rgb\("#666666"\)\)\[\(example\.com/vita/publications\)\]\]'
 
 echo "==> Test 12: custom publications label"
 run_wrapper build fixtures/resume-publications-custom-label.json --out build/out-custom-label >/dev/null

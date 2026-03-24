@@ -1,0 +1,27 @@
+{
+  "basics": {
+    "name": "Example Person",
+    "label": "Software Engineer",
+    "email": "example@example.com",
+    "url": "https://example.com"
+  },
+  "projects": [
+    {
+      "type": "Research",
+      "description": "See the [_online publications list_](publications/) for publication details."
+    }
+  ],
+  "meta": {
+    "theme": "jsonresume-theme-even",
+    "site": {
+      "url": "https://example.com/vita/"
+    },
+    "themeOptions": {
+      "projectsByType": true,
+      "sections": ["projects:Research"]
+    },
+    "pdfthemeOptions": {
+      "visible_urls": ["notes"]
+    }
+  }
+}

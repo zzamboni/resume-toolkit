@@ -558,6 +558,11 @@ section heading rendering:
 - `letters`
 - `summary_title`
 
+At the `meta.pdfthemeOptions` level, you can also set `visible_urls` to
+control where compact visible URLs are shown in the PDF output. It defaults
+to `["notes"]`. Supported values are `notes`, `profiles`, `projects`,
+`all`, and `none`.
+
 If `highlighted` or `letters` are set, they are passed explicitly to
 `#cv-section(...)`. If they are omitted, nothing is passed and
 `brilliant-cv`'s own defaults are used.

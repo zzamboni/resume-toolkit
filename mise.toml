@@ -293,11 +293,13 @@ if [[ -n "${usage_no_cache_filter:-}" ]]; then
   done
 fi
 
-echo docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
+echo Running: docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
+echo "Finished build at "$(date)
 if [[ -z "${usage_no_test:-}" ]]; then
    mise test-toolkit
 fi
+echo "Finished tests at "$(date)
 '''
 
 [tasks.test-toolkit]
