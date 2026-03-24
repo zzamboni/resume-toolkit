@@ -31,3 +31,5 @@ brilliant-cv/
 pubs-src/zamboni-pubs.pdf
 .mise/
 build/
+zamboni-*.json
+zamboni-*.bib
