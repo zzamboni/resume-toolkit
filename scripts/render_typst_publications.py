@@ -100,9 +100,9 @@ def generate_typst_publications(
     output += generate_metadata(resume_data)
     output += "\n"
     output += "#let metadata_pub = metadata + (\n"
-    output += "  personal: metadata.personal + (\n"
-    output += "    info: (),\n"
-    output += "  ),\n"
+#    output += "  personal: metadata.personal + (\n"
+#    output += "    info: (),\n"
+#    output += "  ),\n"
     output += "  layout: metadata.layout + (\n"
     output += "    header: metadata.layout.header + (\n"
     output += "      display_profile_photo: false,\n"
@@ -114,7 +114,7 @@ def generate_typst_publications(
     if pubs_url:
         output += f' #"\\n" #link("{escape_typst(pubs_url)}")[{escape_typst(pubs_url_display)}]'
     output += " ],\n"
-    output += '      header_quote: "",\n'
+#    output += '      header_quote: "",\n'
     output += "    ),\n"
     output += "  ),\n"
     output += ")\n\n"
