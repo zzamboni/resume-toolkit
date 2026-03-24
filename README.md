@@ -91,10 +91,10 @@ You can find some further samples in the `samples/` directory:
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
 
 -   Docker
--   A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described )
+-   A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described below)
 -   Optional BibTeX file(s) for publications
 
-If no BibTeX files are provided, the publications output is skipped.
+If no BibTeX files are provided, the publications outputs are skipped.
 
 To install, download the [build-resume.sh](https://github.com/zzamboni/resume-toolkit/blob/main/build-resume.sh) script and make it executable:
 
