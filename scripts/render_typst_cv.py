@@ -20,6 +20,23 @@ from datetime import datetime
 from pathlib import Path
 import shutil
 from typing import Any, Dict, List, Optional
+from urllib.parse import urljoin, urlparse
+
+SITE_URL = ""
+
+
+def resolve_pdf_url(url: str) -> str:
+    if not url:
+        return ""
+    parsed = urlparse(url)
+    if parsed.scheme or parsed.netloc or url.startswith("//"):
+        return url
+    if url.startswith(("mailto:", "tel:")):
+        return url
+    if not SITE_URL:
+        return url
+    return urljoin(SITE_URL, url)
+
 
 def convert_markdown_to_typst(text: str) -> str:
     """Convert Markdown formatting to Typst markup."""
@@ -28,9 +45,9 @@ def convert_markdown_to_typst(text: str) -> str:
 
     def replace_link(match):
         link_text = match.group(1)
-        url = match.group(2)
+        url = resolve_pdf_url(match.group(2))
         link_text_processed = convert_markdown_inline(link_text)
-        return f'#link("{url}")[{link_text_processed}]'
+        return f'#link("{resolve_pdf_url(url)}")[{link_text_processed}]'
 
     text = re.sub(r'\[(.+?)\]\(([^)]+)\)', replace_link, text)
     text = convert_markdown_inline(text)
@@ -526,7 +543,7 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
             output += f'  title: [{escape_typst(position)}],\n'
             output += f'  society: ['
             if url:
-                output += f'#link("{url}")[{escape_typst(company)}]'
+                output += f'#link("{resolve_pdf_url(url)}")[{escape_typst(company)}]'
             else:
                 output += escape_typst(company)
             output += '],\n'
@@ -552,7 +569,7 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
         output += f'#cv-entry-start(\n'
         output += f'  society: ['
         if url:
-            output += f'#link("{url}")[{escape_typst(company)}]'
+            output += f'#link("{resolve_pdf_url(url)}")[{escape_typst(company)}]'
         else:
             output += escape_typst(company)
         output += '],\n'
@@ -642,7 +659,7 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
         output += f'  title: [{escape_typst(title)}],\n'
         output += f'  society: ['
         if url:
-            output += f'#link("{url}")[{escape_typst(institution)}]'
+            output += f'#link("{resolve_pdf_url(url)}")[{escape_typst(institution)}]'
         else:
             output += escape_typst(institution)
         output += '],\n'
@@ -718,7 +735,7 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
         is_note = bool(name) and not issuer and not date and not image_url
         if is_note:
             if url:
-                output += f'#link("{url}")[{process_text(name)}]\n\n'
+                output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]\n\n'
             else:
                 output += f'{process_text(name)}\n\n'
             continue
@@ -750,7 +767,7 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
             output += '  metadata: metadata_alt,\n'
             output += '  title: ['
             if url:
-                output += f'#link("{url}")[*{escape_typst(name)}*]'
+                output += f'#link("{resolve_pdf_url(url)}")[*{escape_typst(name)}*]'
             else:
                 output += f'*{escape_typst(name)}*'
             output += '],\n'
@@ -768,7 +785,7 @@ def render_certificates(certificates: List[Dict[str, Any]], base_output_dir: Pat
             output += f'  date: [{date_fmt}],\n'
             output += '  title: ['
             if url:
-                output += f'#link("{url}")[{escape_typst(name)}]'
+                output += f'#link("{resolve_pdf_url(url)}")[{escape_typst(name)}]'
             else:
                 output += escape_typst(name)
             output += '],\n'
@@ -835,7 +852,7 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects",
 
         if not name:
             if description:
-                output += f"_{process_text(description)}_\n\n"
+                output += f"{process_text(description)}\n\n"
             continue
 
         date_range = format_date_range(start, end) if start else ""
@@ -856,7 +873,7 @@ def render_projects(projects: List[Dict[str, Any]], label: str = "Projects",
         output += f'  metadata: metadata_alt,\n'
         output += f'  title: ['
         if url:
-            output += f'#link("{url}")[{process_text(name)}]'
+            output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]'
         else:
             output += process_text(name)
         output += '],\n'
@@ -904,7 +921,7 @@ def render_volunteer(volunteer: List[Dict[str, Any]], label: str = "Volunteer",
         output += f'  title: [{escape_typst(position)}],\n'
         output += f'  society: ['
         if url:
-            output += f'#link("{url}")[{escape_typst(org)}]'
+            output += f'#link("{resolve_pdf_url(url)}")[{escape_typst(org)}]'
         else:
             output += escape_typst(org)
         output += '],\n'
@@ -1256,7 +1273,7 @@ def render_publications(
         is_note = bool(name) and ("bibfiles" in pub or (not publisher and not release_date and not summary))
         if is_note:
             if url:
-                output += f'#link("{url}")[{process_text(name)}]\n\n'
+                output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]\n\n'
             else:
                 output += f'{process_text(name)}\n\n'
             continue
@@ -1284,7 +1301,7 @@ def render_publications(
         output += '#cv-entry(\n'
         output += f'  title: ['
         if url:
-            output += f'#link("{url}")[{process_text(name)}]'
+            output += f'#link("{resolve_pdf_url(url)}")[{process_text(name)}]'
         else:
             output += process_text(name)
         output += '],\n'
@@ -1663,6 +1680,13 @@ def main():
 
     with open(input_file, 'r', encoding='utf-8') as f:
         resume_data = json.load(f)
+
+    global SITE_URL
+    meta = resume_data.get("meta", {}) if isinstance(resume_data, dict) else {}
+    site = meta.get("site", {}) if isinstance(meta, dict) else {}
+    if isinstance(site, dict):
+        site_url = site.get("url", "")
+        SITE_URL = site_url.strip() if isinstance(site_url, str) else ""
 
     assets_dir = Path("assets")
     source_assets_dir = Path(os.environ.get("VITA_ASSETS_DIR", "assets"))

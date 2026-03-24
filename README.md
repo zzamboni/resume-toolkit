@@ -345,6 +345,8 @@ If `meta.publicationsOptions.links` is unset, the publications HTML page gets th
 
 The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
 
+If you set `meta.site.url`, relative links are kept relative in the HTML output but are resolved against that base URL in the generated PDF outputs. This applies both to explicit `url` fields and to Markdown links embedded inside text fields such as `summary` or `highlights`.
+
 If `pubSections` is set to `true`, the following default values are used:
 
 ``` python
