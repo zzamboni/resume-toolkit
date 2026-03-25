@@ -155,11 +155,11 @@ Generated files:
 ``` sh
 $ build-resume.sh --help
 Usage:
-  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
-  build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
-  build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
-  build-resume.sh update-pub-numbers <resume.json> [--html <path>]
-  build-resume.sh version
+  build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
+  build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
+  build-resume.sh [--pull] update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
+  build-resume.sh [--pull] update-pub-numbers <resume.json> [--html <path>]
+  build-resume.sh [--pull] version
 ```
 
 <a id="org6cb0f47"></a>
@@ -167,7 +167,7 @@ Usage:
 ### `build` (default)
 
 ```sh
-build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
+build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
 ```
 
 These are equivalent:
@@ -182,6 +182,7 @@ Options:
 -   `--out <dir>`: output base directory (default `build/<resume-stem>`)
 -   `--pubs-url <url>`: online publications URL for standalone publications PDF footer
 -   `--cv-url <url>`: online CV URL for main resume PDF footer
+-   `--pull`: pull the configured Docker image before running and use the updated image if one is available
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
 -   `--no-fetch-logos`: disable automatic logo fetching when `assets/logos/` is missing

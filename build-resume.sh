@@ -4,6 +4,7 @@ set -euo pipefail
 IMAGE="${VITA_PIPELINE_IMAGE:-zzamboni/resume-toolkit:latest}"
 PORT="${VITA_SERVE_PORT:-8080}"
 CACHE_DIR="${VITA_PIPELINE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vita-pipeline}"
+PULL_IMAGE=0
 
 mkdir -p "$CACHE_DIR"
 
@@ -20,15 +21,15 @@ port_in_use() {
 usage() {
   cat <<'USAGE'
 Usage:
-  build-resume.sh [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--token LOGODEV_TOKEN]
-  build-resume.sh fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
-  build-resume.sh update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
-  build-resume.sh update-pub-numbers <resume.json> [--html <path>]
-  build-resume.sh update-inline-pubs <resume.json> [bibfiles...]
-  build-resume.sh version
+  build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--token LOGODEV_TOKEN]
+  build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
+  build-resume.sh [--pull] update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
+  build-resume.sh [--pull] update-pub-numbers <resume.json> [--html <path>]
+  build-resume.sh [--pull] update-inline-pubs <resume.json> [bibfiles...]
+  build-resume.sh [--pull] version
 
 Examples:
-  build-resume.sh resume.json pubs.bib --watch --serve
+  build-resume.sh --pull resume.json pubs.bib --watch --serve
   build-resume.sh fetch-logos resume.json --overwrite --token pk_XXXXXXXXXXXXXXX
   build-resume.sh update-certs zzamboni resume.json
   build-resume.sh update-pub-numbers resume.json
@@ -61,6 +62,11 @@ case "${1:-}" in
     ;;
 esac
 
+while [[ "${1:-}" == "--pull" ]]; do
+  PULL_IMAGE=1
+  shift
+done
+
 case "${1:-}" in
   -h|--help)
     usage
@@ -84,6 +90,20 @@ esac
 
 if [[ -n "${LOGODEV_TOKEN:-}" ]]; then
   ENV_ARGS+=(-e "LOGODEV_TOKEN=$LOGODEV_TOKEN")
+fi
+
+if [[ "$PULL_IMAGE" -eq 1 ]]; then
+  before_image_id="$(docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
+  if docker pull "$IMAGE" >/dev/null; then
+    after_image_id="$(docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
+    if [[ -n "$before_image_id" && -n "$after_image_id" && "$before_image_id" != "$after_image_id" ]]; then
+      echo "→ Updated image: $IMAGE"
+    elif [[ -z "$before_image_id" && -n "$after_image_id" ]]; then
+      echo "→ Pulled image: $IMAGE"
+    fi
+  else
+    echo "Warning: could not pull image $IMAGE; continuing with local copy." >&2
+  fi
 fi
 
 for a in "${ARGS[@]}"; do
