@@ -36,7 +36,7 @@ def generate_typst_publications(
     output = """// Publications list generated from BibTeX
 // Using brilliant-cv template for document layout
 
-#import "@preview/brilliant-cv:3.1.2": *
+#import "@preview/brilliant-cv:3.3.0": *
 
 /// Add the title of a section
 ///

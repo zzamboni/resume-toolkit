@@ -75,7 +75,7 @@ ARG PREWARM_CACHE=0
 RUN if [ "$PREWARM_CACHE" = "1" ]; then \
       mkdir -p /tmp/typst-prime \
       && cd /tmp/typst-prime \
-      && (echo '#import "@preview/brilliant-cv:3.1.2"'; echo '#import "@preview/fontawesome:0.6.0"; echo "#import "@preview/pergamon:0.7.2": *') | typst compile - /tmp/typst-prime/prime-typst.pdf \
+      && (echo '#import "@preview/brilliant-cv:3.3.0"'; echo '#import "@preview/fontawesome:0.6.0"; echo "#import "@preview/pergamon:0.7.2": *') | typst compile - /tmp/typst-prime/prime-typst.pdf \
       && rm -rf /tmp/typst-prime; \
     fi \
   && chmod -R a+rwX /opt/vita-cache

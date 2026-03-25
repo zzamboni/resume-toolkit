@@ -556,9 +556,7 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
   layout: {layout_str},
 
   inject: (
-    inject_ai_prompt: false,
-    inject_keywords: false,
-    injected_keywords_list: []
+    inject_keywords_list: [],
   ),
 
   lang: (
@@ -1664,7 +1662,7 @@ def generate_typst_cv(
     output = """// Professional CV generated from JSONResume
 // Using brilliant-cv template
 
-#import "@preview/brilliant-cv:3.1.2": *
+#import "@preview/brilliant-cv:3.3.0": *
 
 /// Add the title of a section
 ///

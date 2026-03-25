@@ -2,6 +2,9 @@
 
 (AI-generated from git log, human-polished)
 
+## 2026-03-26 - v0.3.4
+- Updated brilliant-cv used for PDF rendering from 3.1.2 to 3.3.0.
+
 ## 2026-03-25 — v0.3.3
 - Improved remote image handling so profile photos without a file extension are saved with the correct image format and cleaner filenames.
 - Suppressed brilliant-cv fallback placeholders for missing work and education locations by rendering them as empty values in the PDF output.
