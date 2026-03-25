@@ -164,12 +164,32 @@ def esc_latex(text: str) -> str:
     return "".join(replacements.get(ch, ch) for ch in text)
 
 
+def default_resume_links(has_publications: bool) -> list[dict[str, str]]:
+    links = [
+        {
+            "name": "PDF version",
+            "icon": "fa-regular fa-file-pdf",
+            "url": "<resume>.pdf",
+        }
+    ]
+    if has_publications:
+        links.append(
+            {
+                "name": "Publications page",
+                "icon": "fa-quote-left",
+                "url": "publications/",
+            }
+        )
+    return links
+
+
 def normalize_resume(src: Path, dst: Path) -> dict:
     data = json.loads(src.read_text(encoding="utf-8"))
     resume_stem = src.stem
     publications_stem = f"{resume_stem}-pubs"
-
     publications = data.get("publications")
+
+    bib_entries = []
     if isinstance(publications, list):
         bib_entries = [
             pub for pub in publications if isinstance(pub, dict) and "bibfiles" in pub
@@ -186,19 +206,30 @@ def normalize_resume(src: Path, dst: Path) -> dict:
             if not isinstance(entry.get("url"), str) or not entry.get("url", "").strip():
                 entry["url"] = "publications/"
 
-    theme_options = data.get("meta", {}).get("themeOptions", {})
-    if isinstance(theme_options, dict):
-        links = theme_options.get("links")
-        if isinstance(links, list):
-            for link in links:
-                if not isinstance(link, dict):
-                    continue
-                url = link.get("url")
-                if isinstance(url, str):
-                    link["url"] = (
-                        url.replace("<resume>", resume_stem)
-                        .replace("<publications>", publications_stem)
-                    )
+    meta = data.get("meta")
+    if not isinstance(meta, dict):
+        meta = {}
+        data["meta"] = meta
+
+    theme_options = meta.get("themeOptions")
+    if not isinstance(theme_options, dict):
+        theme_options = {}
+        meta["themeOptions"] = theme_options
+
+    if "links" not in theme_options:
+        theme_options["links"] = default_resume_links(bool(bib_entries))
+
+    links = theme_options.get("links")
+    if isinstance(links, list):
+        for link in links:
+            if not isinstance(link, dict):
+                continue
+            url = link.get("url")
+            if isinstance(url, str):
+                link["url"] = (
+                    url.replace("<resume>", resume_stem)
+                    .replace("<publications>", publications_stem)
+                )
 
     dst.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return data

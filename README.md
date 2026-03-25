@@ -532,6 +532,21 @@ The table of contents automatically includes links to all resume sections that h
 
 You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` value can be a plain Font Awesome name like `github`, or a Font Awesome class-style string such as `fa-regular fa-file-pdf` or `fa-brands fa-github`. In the `url` field, `<resume>` is replaced with the current resume file stem and `<publications>` with the generated publications file stem before rendering.
 
+If `.meta.themeOptions.links` is not set, the toolkit provides default links for the generated PDF CV and, when a standalone publications page is built, for that publications page as well. If `links` is explicitly set to an empty list (`[]`), no resume floating links are rendered.
+
+Default generated links:
+
+```json
+[
+  { "name": "PDF version", "url": "<resume>.pdf", "icon": "fa-regular fa-file-pdf" },
+  { "name": "Publications page", "url": "publications/", "icon": "fa-quote-left" }
+]
+```
+
+The publications link is only included when the resume defines a standalone publications page via `publications[].bibfiles`.
+
+Custom example:
+
 ```json
 {
   "meta": {
