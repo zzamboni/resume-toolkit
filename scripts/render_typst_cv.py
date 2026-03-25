@@ -1740,6 +1740,13 @@ def generate_typst_cv(
     )
   )
 )
+#let metadata_no_photo = metadata + (
+  layout: metadata.layout + (
+    header: metadata.layout.header + (
+      display_profile_photo: false,
+    )
+  )
+)
 '''
     output += "\n"
 
@@ -1753,7 +1760,7 @@ def generate_typst_cv(
 '''
     else:
         output += '''#show: cv.with(
-  metadata,
+  metadata_no_photo,
 )
 
 '''
