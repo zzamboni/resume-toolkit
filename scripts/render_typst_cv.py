@@ -16,6 +16,7 @@ import os
 import re
 import sys
 import urllib.request
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 import shutil
@@ -343,28 +344,55 @@ def format_date_range(start: Optional[str], end: Optional[str]) -> str:
         return f"{start_fmt} - {end_fmt}"
 
 
+def _content_type_extension(content_type: str) -> str:
+    content_type = (content_type or "").split(";", 1)[0].strip().lower()
+    return {
+        "image/jpeg": ".jpg",
+        "image/jpg": ".jpg",
+        "image/png": ".png",
+        "image/gif": ".gif",
+        "image/svg+xml": ".svg",
+        "image/webp": ".webp",
+    }.get(content_type, "")
+
+
+def _normalized_image_filename(url: str, content_type: str = "") -> str:
+    parsed = urllib.parse.urlparse(url)
+    path = parsed.path or ""
+    raw_name = Path(path).name or "image"
+    stem = Path(raw_name).stem or raw_name or "image"
+    stem = re.sub(r"[^A-Za-z0-9._-]+", "-", stem).strip("-._") or "image"
+    suffix = Path(raw_name).suffix.lower()
+
+    if "images.credly.com" in parsed.netloc:
+        parts = [part for part in path.split("/") if part]
+        unique_id = parts[-2] if len(parts) >= 2 else stem
+        stem = re.sub(r"[^A-Za-z0-9._-]+", "-", unique_id).strip("-._") or "badge"
+        if not suffix:
+            suffix = ".png"
+
+    if suffix not in {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}:
+        suffix = _content_type_extension(content_type) or ".png"
+
+    return f"{stem}{suffix}"
+
+
 def download_image(url: str, base_output_dir: Path, output_dir: Path) -> Optional[str]:
     """Download an image from URL and return local path."""
     if not url:
         return None
 
     try:
-        url_parts = url.split("/")
-        if "images.credly.com" in url:
-            unique_id = url_parts[-2] if len(url_parts) >= 2 else url_parts[-1]
-            filename = f"{unique_id}.png"
-        else:
-            filename = url_parts[-1]
-            if not filename.endswith(('.png', '.jpg', '.jpeg', '.gif', '.svg')):
-                filename += '.png'
-
         output_dir_full = base_output_dir / output_dir
         output_dir_full.mkdir(parents=True, exist_ok=True)
-        local_path = output_dir_full / filename
 
-        if not local_path.exists():
-            print(f"Downloading {url}...")
-            urllib.request.urlretrieve(url, local_path)
+        with urllib.request.urlopen(url) as response:
+            content_type = response.headers.get_content_type()
+            filename = _normalized_image_filename(url, content_type)
+            local_path = output_dir_full / filename
+            if not local_path.exists():
+                print(f"Downloading {url}...")
+                local_path.write_bytes(response.read())
 
         return str(output_dir / filename)
     except Exception as e:
@@ -628,6 +656,8 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
                 output += f'  logo: image("{logo_path}"),\n'
             if location:
                 output += f'  location: [{escape_typst(location)}],\n'
+            else:
+                output += '  location: "",\n'
             output += f'  description: [\n    {description}\n  ]\n'
             output += ')\n\n'
             continue
@@ -653,6 +683,8 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
             output += f'  logo: image("{logo_path}"),\n'
         if shared_location:
             output += f'  location: [{escape_typst(shared_location)}],\n'
+        else:
+            output += '  location: "",\n'
         output += ')\n#v(4pt)\n\n'
 
         for job in jobs:
@@ -744,6 +776,8 @@ def render_education(education: List[Dict[str, Any]], base_output_dir: Path, ass
             output += f'  logo: image("{logo_path}"),\n'
         if location:
             output += f'  location: [{escape_typst(location)}],\n'
+        else:
+            output += '  location: "",\n'
         if desc_items:
             output += '  description: list(\n'
             for item in desc_items:
