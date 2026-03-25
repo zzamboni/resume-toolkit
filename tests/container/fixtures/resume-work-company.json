@@ -1,0 +1,35 @@
+{
+  "basics": {
+    "name": "Example Person",
+    "label": "Engineer",
+    "email": "example@example.com"
+  },
+  "work": [
+    {
+      "company": "Acme Corp",
+      "position": "Senior Engineer",
+      "startDate": "2022-01",
+      "endDate": "2024-01",
+      "summary": "Built systems."
+    },
+    {
+      "company": "Acme Corp",
+      "position": "Engineer",
+      "startDate": "2020-01",
+      "endDate": "2021-12",
+      "summary": "Maintained systems."
+    },
+    {
+      "position": "Independent Consultant",
+      "startDate": "2019-01",
+      "endDate": "2019-12",
+      "summary": "Advised clients."
+    },
+    {
+      "position": "Contract Developer",
+      "startDate": "2018-01",
+      "endDate": "2018-12",
+      "summary": "Delivered projects."
+    }
+  ]
+}

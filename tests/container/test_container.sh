@@ -66,6 +66,22 @@ assert_not_contains() {
   true
 }
 
+assert_count() {
+  local path="$1"
+  local pattern="$2"
+  local expected="$3"
+  local actual
+  if command -v rg >/dev/null 2>&1; then
+    actual="$(rg -c "$pattern" "$path")"
+  else
+    actual="$(grep -Ec "$pattern" "$path")"
+  fi
+  [[ "$actual" == "$expected" ]] || {
+    echo "error: expected $expected matches for '$pattern' in $path, found $actual" >&2
+    exit 1
+  }
+}
+
 require_cmd docker
 require_cmd bash
 
@@ -85,6 +101,7 @@ cp "$FIXTURES_DIR/resume-publications-inline-only-filtered.json" "$WORK_DIR/fixt
 cp "$FIXTURES_DIR/resume-project-visible-urls.json" "$WORK_DIR/fixtures/resume-project-visible-urls.json"
 cp "$FIXTURES_DIR/resume-visible-urls-notes.json" "$WORK_DIR/fixtures/resume-visible-urls-notes.json"
 cp "$FIXTURES_DIR/resume-visible-urls-project-note.json" "$WORK_DIR/fixtures/resume-visible-urls-project-note.json"
+cp "$FIXTURES_DIR/resume-work-company.json" "$WORK_DIR/fixtures/resume-work-company.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 cp "$FIXTURES_DIR/publications-filtered.bib" "$WORK_DIR/fixtures/publications-filtered.bib"
 
@@ -210,6 +227,12 @@ run_wrapper build fixtures/resume-publications-custom-links.json --out build/out
 assert_file "$WORK_DIR/build/out-custom-links/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.pdf"'
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.bib"'
+
+echo "==> Test 14: work entries support company and avoid empty grouping"
+run_wrapper build fixtures/resume-work-company.json --out build/out-work-company >/dev/null
+assert_file "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ"
+assert_contains "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ" 'society: \[Acme Corp\]'
+assert_count "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ" '^#cv-entry-start\(' 1
 
 echo "==> Test 12: publications floating links disabled"
 run_wrapper build fixtures/resume-publications-no-links.json --out build/out-no-links >/dev/null

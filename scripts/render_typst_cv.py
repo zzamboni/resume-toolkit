@@ -607,10 +607,14 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
 
     output = render_section_heading(label, section_style)
 
+    def job_company(job: Dict[str, Any]) -> str:
+        value = job.get("name") or job.get("company", "")
+        return value.strip() if isinstance(value, str) else ""
+
     grouped_work: List[Dict[str, Any]] = []
     for job in work:
-        company = job.get("name", "")
-        if not grouped_work or grouped_work[-1]["company"] != company:
+        company = job_company(job)
+        if not company or not grouped_work or grouped_work[-1]["company"] != company:
             grouped_work.append({"company": company, "jobs": []})
         grouped_work[-1]["jobs"].append(job)
 
@@ -618,7 +622,7 @@ def render_experience(work: List[Dict[str, Any]], base_output_dir: Path, assets_
         jobs = group["jobs"]
         if len(jobs) == 1:
             job = jobs[0]
-            company = job.get("name", "")
+            company = job_company(job)
             position = job.get("position", "")
             start = job.get("startDate", "")
             end = job.get("endDate", "")
