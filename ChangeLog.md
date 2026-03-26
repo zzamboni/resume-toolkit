@@ -2,6 +2,11 @@
 
 (AI-generated from git log, human-polished)
 
+## 2026-03-26 - v0.4.0
+
+- Switched from jsonresume-theme-even to jsonresume-theme-eventide, my fork of even which includes all the changes from  https://github.com/rbardini/jsonresume-theme-even/pull/33 - no functional changes for now.
+- Added --pull flag to build-resume.sh to check/update the docker image.
+
 ## 2026-03-26 - v0.3.4
 - Updated brilliant-cv used for PDF rendering from 3.1.2 to 3.3.0.
 
