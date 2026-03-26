@@ -58,9 +58,9 @@ RUN fc-cache -f /usr/share/fonts
 
 FROM runtime AS theme-builder
 
-WORKDIR /tmp/jsonresume-theme-even
+WORKDIR /tmp/jsonresume-theme-eventide
 
-COPY themes/jsonresume-theme-even/ ./
+COPY themes/jsonresume-theme-eventide/ ./
 
 RUN if [ -f package-lock.json ]; then \
       npm ci --ignore-scripts; \
@@ -81,9 +81,9 @@ RUN if [ "$PREWARM_CACHE" = "1" ]; then \
   && chmod -R a+rwX /opt/vita-cache
 
 COPY VERSION requirements.txt package.json package-lock.json ./
-COPY --from=theme-builder /tmp/jsonresume-theme-even/package.json ./themes/jsonresume-theme-even/package.json
-COPY --from=theme-builder /tmp/jsonresume-theme-even/bin ./themes/jsonresume-theme-even/bin
-COPY --from=theme-builder /tmp/jsonresume-theme-even/dist ./themes/jsonresume-theme-even/dist
+COPY --from=theme-builder /tmp/jsonresume-theme-eventide/package.json ./themes/jsonresume-theme-eventide/package.json
+COPY --from=theme-builder /tmp/jsonresume-theme-eventide/bin ./themes/jsonresume-theme-eventide/bin
+COPY --from=theme-builder /tmp/jsonresume-theme-eventide/dist ./themes/jsonresume-theme-eventide/dist
 
 RUN python3 -m venv /opt/vita-toolkit/.venv \
   && /opt/vita-toolkit/.venv/bin/pip install --no-cache-dir --upgrade pip \

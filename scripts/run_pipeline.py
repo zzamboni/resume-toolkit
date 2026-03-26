@@ -648,7 +648,7 @@ def main() -> int:
         f"FILE:{profile_image}" if profile_image else "FILE:",
         f"FILE:{toolkit_root / 'scripts' / 'render_cv.sh'}",
         f"STR:cv_html_target={cv_html}",
-        "STR:cv_html_theme=jsonresume-theme-even",
+        "STR:cv_html_theme=jsonresume-theme-eventide",
     )
     cv_html_stamp = state_dir / "cv-html.sha"
     if needs_rebuild(cv_html, cv_html_stamp, cv_html_hash):
@@ -656,7 +656,7 @@ def main() -> int:
         run_command(
             [
                 str(toolkit_root / "scripts" / "render_cv.sh"),
-                "jsonresume-theme-even",
+                "jsonresume-theme-eventide",
                 str(normalized_json),
                 str(cv_html),
             ]

@@ -1,4 +1,4 @@
-[submodule "themes/jsonresume-theme-even"]
+[submodule "themes/jsonresume-theme-eventide"]
 	path = themes/jsonresume-theme-eventide
 	url = https://github.com/zzamboni/jsonresume-theme-eventide.git
 	branch = feat-multiple-features

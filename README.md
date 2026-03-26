@@ -5,7 +5,7 @@
 
 `resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
 
--   Resume HTML, using a customized version of the [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even)) theme;
+-   Resume HTML, using the [jsonresume-theme-eventide](https://github.com/zzamboni/jsonresume-theme-eventide) theme (a fork of [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even));
 -   Resume Typst/PDF using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) theme, automatically fetching company/school logos from [logo.dev](https://logo.dev/);
 -   Standalone publications HTML page (from BibTeX);
 -   Standalone publications PDF (from BibTeX, rendered with Typst);
@@ -419,9 +419,9 @@ Example:
 
 <a id="even-theme-extensions"></a>
 
-## Even theme extensions
+## Eventide theme features
 
-The version of jsonresume-theme-even used by this toolkit supports the following additional options (described also in [jsonresume-them-even PR#33](https://github.com/rbardini/jsonresume-theme-even/pull/33)):
+The `jsonresume-theme-eventide` theme used by this toolkit is a fork of `jsonresume-theme-even`, which supports the following additional features:
 
 ### Font Awesome Icons
 
@@ -639,7 +639,7 @@ The wrapper runs:
 -   pipeline script `scripts/run_pipeline.sh`
 -   supporting converters in `scripts/`
 
-The container uses a customized version of `themes/jsonresume-theme-even` as a git submodule, cloned from <https://github.com/zzamboni/jsonresume-theme-even/tree/feat-multiple-features>.
+The container uses `themes/jsonresume-theme-eventide` as a git submodule, pointing to <https://github.com/zzamboni/jsonresume-theme-eventide>.
 
 Clone with submodules enabled:
 
