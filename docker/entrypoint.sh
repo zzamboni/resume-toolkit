@@ -326,6 +326,8 @@ case "$1" in
     ;;
   version)
     toolkit_version="${VITA_TOOLKIT_VERSION:-}"
+    theme_version="unknown"
+    brilliant_cv_version="unknown"
     if [[ -z "$toolkit_version" || "$toolkit_version" == "dev" || "$toolkit_version" == "unknown" ]]; then
       if [[ -f "$VITA_TOOLKIT_ROOT/VERSION" ]]; then
         toolkit_version="$(tr -d '[:space:]' < "$VITA_TOOLKIT_ROOT/VERSION")"
@@ -333,7 +335,18 @@ case "$1" in
         toolkit_version="unknown"
       fi
     fi
+    if [[ -f "$VITA_TOOLKIT_ROOT/themes/jsonresume-theme-eventide/package.json" ]]; then
+      theme_version="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' \
+        "$VITA_TOOLKIT_ROOT/themes/jsonresume-theme-eventide/package.json" 2>/dev/null || echo unknown)"
+    fi
+    if [[ -f "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" ]]; then
+      brilliant_cv_version="$(sed -n 's/.*@preview\/brilliant-cv:\([0-9.][0-9.]*\).*/\1/p' \
+        "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" | head -n 1)"
+      brilliant_cv_version="${brilliant_cv_version:-unknown}"
+    fi
     echo "resume-toolkit ${toolkit_version}"
+    echo "jsonresume-theme-eventide ${theme_version}"
+    echo "brilliant-cv ${brilliant_cv_version}"
     echo "node $(node --version)"
     echo "python $(python3 --version | awk '{print $2}')"
     echo "typst $(typst --version | awk '{print $2}')"

@@ -1,9 +1,11 @@
 FROM node:24-alpine AS base
 
 ARG VITA_TOOLKIT_VERSION=dev
+ARG TYPST_VERSION=0.14.2
 LABEL org.opencontainers.image.title="resume-toolkit"
 LABEL org.opencontainers.image.version="${VITA_TOOLKIT_VERSION}"
 ENV VITA_TOOLKIT_VERSION="${VITA_TOOLKIT_VERSION}"
+ENV TYPST_VERSION="${TYPST_VERSION}"
 
 USER root
 
@@ -28,7 +30,7 @@ RUN apk add --no-cache \
 
 RUN cd /tmp \
   && curl --proto '=https' --tlsv1.2 -fsSLo typst.tar.xz \
-    https://github.com/typst/typst/releases/download/v0.14.0/typst-x86_64-unknown-linux-musl.tar.xz \
+    "https://github.com/typst/typst/releases/download/v${TYPST_VERSION}/typst-x86_64-unknown-linux-musl.tar.xz" \
   && tar -xJf typst.tar.xz \
   && install -m 0755 typst-x86_64-unknown-linux-musl/typst /usr/local/bin/typst \
   && rm -rf /tmp/typst.tar.xz /tmp/typst-x86_64-unknown-linux-musl

@@ -228,6 +228,15 @@ git push
 git push --tags
 '''
 
+[tasks.update-typst-version]
+description = "Update the pinned Typst version in Dockerfile to the latest release"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/update_typst_version.sh
+'''
+
 # -----------------------------------------------------------------------------
 # Internal/helper tasks
 # -----------------------------------------------------------------------------
