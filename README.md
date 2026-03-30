@@ -1,7 +1,9 @@
 # Resume Toolkit - JSONresume/BibTeX to HTML/PDF
 
-<a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit"><img alt="Docker Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit?sort=semver"></a>
-
+![Current version](https://img.shields.io/github/v/tag/zzamboni/resume-toolkit?label=Version)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml)
+<a href="https://github.com/zzamboni/jsonresume-theme-eventide"><img alt="Eventide theme version" src="https://img.shields.io/npm/v/jsonresume-theme-eventide?label=Eventide%20theme"></a>
+<a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit"><img alt="Docker Hub Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit?sort=semver&label=DockerHub%20image"></a>
 
 `resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
 
