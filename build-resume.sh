@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-IMAGE="${VITA_PIPELINE_IMAGE:-zzamboni/resume-toolkit:latest}"
+IMAGE="${VITA_PIPELINE_IMAGE:-ghcr.io/zzamboni/resume-toolkit:latest}"
 PORT="${VITA_SERVE_PORT:-8080}"
 CACHE_DIR="${VITA_PIPELINE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vita-pipeline}"
 PULL_IMAGE=0

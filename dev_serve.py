@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 
 
-IMAGE = os.environ.get("VITA_PIPELINE_IMAGE", "zzamboni/resume-toolkit:latest")
+IMAGE = os.environ.get("VITA_PIPELINE_IMAGE", "ghcr.io/zzamboni/resume-toolkit:latest")
 POLL_INTERVAL = float(os.environ.get("VITA_DEV_SERVE_POLL_INTERVAL", "2"))
 ROOT = Path(__file__).resolve().parent
 

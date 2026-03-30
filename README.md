@@ -1,9 +1,8 @@
 # Resume Toolkit - JSONresume/BibTeX to HTML/PDF
 
-![Current version](https://img.shields.io/github/v/tag/zzamboni/resume-toolkit?label=Version)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml)
+<a href="https://ghcr.io/zzamboni/resume-toolkit"><img alt="Current resume-toolkit version" src="https://img.shields.io/github/v/tag/zzamboni/resume-toolkit?label=Version"></a>
+<a href="https://github.com/zzamboni/resume-toolkit/actions"><img alt="GitHub Actions workflow status" src="https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml"></a>
 <a href="https://github.com/zzamboni/jsonresume-theme-eventide"><img alt="Eventide theme version" src="https://img.shields.io/npm/v/jsonresume-theme-eventide?label=Eventide%20theme"></a>
-<a href="https://hub.docker.com/repository/docker/zzamboni/resume-toolkit"><img alt="Docker Hub Image Version" src="https://img.shields.io/docker/v/zzamboni/resume-toolkit?sort=semver&label=DockerHub%20image"></a>
 
 `resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
 
@@ -90,7 +89,7 @@ You can find some further samples in the `samples/` directory:
 
 ## Requirements and installation
 
-The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://hub.docker.com/repository/docker/zzamboni/resume-toolkit/settings).
+The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://ghcr.io/zzamboni/resume-toolkit).
 
 -   Docker
 -   A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described below)
@@ -625,7 +624,7 @@ Example:
 
 ## Environment Variables
 
--   `VITA_PIPELINE_IMAGE`: Docker image (default: `zzamboni/resume-toolkit:latest`)
+-   `VITA_PIPELINE_IMAGE`: Docker image (default: `ghcr.io/zzamboni/resume-toolkit:latest`)
 -   `VITA_SERVE_PORT`: serve port (default: `8080`)
 -   `VITA_PIPELINE_CACHE_DIR`: host cache dir for container caches
 -   `LOGODEV_TOKEN`: token used by `fetch-logos`
