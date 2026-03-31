@@ -178,6 +178,52 @@ h6 {
   font-size: var(--scale0);
 }
 /* Table of Contents */
+.table-of-contents-toggle {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 120;
+  display: none;
+  place-items: center;
+  appearance: none;
+  cursor: pointer;
+}
+
+.table-of-contents-toggle span {
+  position: absolute;
+  width: 1.25rem;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: 999px;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.table-of-contents-toggle span:nth-child(1) {
+  transform: translateY(-7px);
+}
+
+.table-of-contents-toggle span:nth-child(3) {
+  transform: translateY(7px);
+}
+
+body.toc-menu-open .table-of-contents-toggle span:nth-child(1) {
+  transform: rotate(45deg);
+}
+
+body.toc-menu-open .table-of-contents-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+body.toc-menu-open .table-of-contents-toggle span:nth-child(3) {
+  transform: rotate(-45deg);
+}
+
+body.toc-menu-open {
+  overflow: hidden;
+}
+
 .table-of-contents {
   position: fixed;
   top: 2em;
@@ -228,8 +274,8 @@ h6 {
   font-weight: bold;
 }
 
-/* Hide TOC on smaller screens and in print */
-@media print, (max-width: 64em) {
+@media print {
+  .table-of-contents-toggle,
   .table-of-contents {
     display: none;
   }
@@ -239,6 +285,76 @@ h6 {
 @media (min-width: 64em) {
   body:has(.table-of-contents) {
     padding-right: 16em;
+  }
+}
+
+@media (max-width: 64em) {
+  .table-of-contents-toggle {
+    display: grid;
+    width: 3.25rem;
+    height: 3.25rem;
+    border: 1px solid color-mix(in srgb, var(--color-secondary) 24%, transparent);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--color-background) 94%, transparent);
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(18px);
+  }
+
+  .table-of-contents {
+    inset: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 5.75rem 1.75rem 2.5rem;
+    background:
+      radial-gradient(circle at top right, color-mix(in srgb, var(--color-accent) 16%, transparent), transparent 28%),
+      color-mix(in srgb, var(--color-background) 97%, transparent);
+    backdrop-filter: blur(18px);
+    border-radius: 0;
+    box-shadow: none;
+    max-width: none;
+    max-height: none;
+    overflow-y: auto;
+    visibility: hidden;
+    pointer-events: none;
+    opacity: 0;
+    transition:
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+  }
+
+  .table-of-contents ul {
+    width: min(100%, 28rem);
+    padding: 0 0.5rem 2rem;
+  }
+
+  .table-of-contents li + li {
+    margin-top: 0.85rem;
+  }
+
+  .table-of-contents a {
+    padding: 0.55rem 0.75rem;
+    font-size: 1.55rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    border-radius: 0.85rem;
+  }
+
+  .table-of-contents li:first-child a {
+    margin-bottom: 1rem;
+    font-size: 1.9rem;
+    font-weight: 700;
+  }
+
+  body.toc-menu-open .table-of-contents {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body.toc-menu-open .table-of-contents-toggle {
+    background: color-mix(in srgb, var(--color-background) 92%, transparent);
+    box-shadow: none;
   }
 }
 .pub {
@@ -360,7 +476,18 @@ footer {
 </div>
 
 {% if sectioning_enabled and toc_sections %}
-<nav class="table-of-contents" aria-label="Table of contents">
+<button
+  class="table-of-contents-toggle"
+  type="button"
+  aria-expanded="false"
+  aria-controls="table-of-contents"
+  aria-label="Open table of contents"
+>
+  <span></span>
+  <span></span>
+  <span></span>
+</button>
+<nav class="table-of-contents" id="table-of-contents" aria-label="Table of contents">
   <ul>
     <li>
       <a href="#top" data-toc-target="top"><b>{{ publications_label }}</b></a>
@@ -466,18 +593,48 @@ footer {
 // Table of Contents active state tracking
 (() => {
   const toc = document.querySelector('.table-of-contents');
+  const toggle = document.querySelector('.table-of-contents-toggle');
   if (!toc) return;
 
   const links = toc.querySelectorAll('a[data-toc-target]');
   if (!links.length) return;
 
-  // Track all sections
+  const mobileMediaQuery = window.matchMedia('(max-width: 64em)');
+
+  const setMenuOpen = open => {
+    if (!toggle) return;
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close table of contents' : 'Open table of contents');
+    document.body.classList.toggle('toc-menu-open', open);
+  };
+
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      setMenuOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') setMenuOpen(false);
+    });
+
+    mobileMediaQuery.addEventListener('change', event => {
+      if (!event.matches) setMenuOpen(false);
+    });
+  }
+
+  toc.addEventListener('click', event => {
+    if (mobileMediaQuery.matches && event.target === toc) setMenuOpen(false);
+  });
+
   const sections = Array.from(links)
     .map(link => {
       const target = link.getAttribute('data-toc-target');
-      if (target === 'top') return { element: document.body, link, id: target };
+      if (target === 'top') {
+        const top = document.getElementById('top');
+        return top ? { element: document.body, scrollTarget: top, link, id: target } : null;
+      }
       const section = document.getElementById(target);
-      return section ? { element: section, link, id: target } : null;
+      return section ? { element: section, scrollTarget: section, link, id: target } : null;
     })
     .filter(Boolean);
 
@@ -506,7 +663,7 @@ footer {
 
     if (intersecting.length > 0) {
       const target = intersecting[0].target;
-      const sectionData = sections.find(s => s.element === target);
+      const sectionData = sections.find(s => s.scrollTarget === target || s.element === target);
       if (sectionData) {
         activeSection = sectionData.element;
         setActiveLink(activeSection);
@@ -515,8 +672,8 @@ footer {
   }, observerOptions);
 
   // Observe sections
-  sections.forEach(({ element }) => {
-    observer.observe(element);
+  sections.forEach(({ element, scrollTarget }) => {
+    observer.observe(scrollTarget || element);
   });
 
   // Handle smooth scrolling
@@ -526,8 +683,10 @@ footer {
       const target = link.getAttribute('data-toc-target');
       const sectionData = sections.find(s => s.id === target);
       if (sectionData) {
-        sectionData.element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const scrollTarget = sectionData.scrollTarget || sectionData.element;
+        scrollTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
         setActiveLink(sectionData.element);
+        if (mobileMediaQuery.matches) setMenuOpen(false);
       }
     });
   });
