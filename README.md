@@ -157,7 +157,7 @@ Generated files:
 $ build-resume.sh --help
 Usage:
   build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
-  build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
+  build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh [--pull] update-pub-numbers <resume.json> [--html <path>]
   build-resume.sh [--pull] version
@@ -220,6 +220,7 @@ Options:
 
 -   `--overwrite`
 -   `--dry-run`
+-   `--update-json`: write matching Logo.dev URLs back into `work[].image` and `education[].image`
 -   `--token <token>` (or set `LOGODEV_TOKEN`)
 
 

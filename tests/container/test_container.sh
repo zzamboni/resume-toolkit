@@ -133,6 +133,7 @@ assert_contains "$WORK_DIR/build/out/vita/publications/index.html" "Example Pers
 
 echo "==> Test 3: logo fetch dry-run wiring"
 run_wrapper fetch-logos fixtures/resume.json --dry-run --token dummy >/dev/null
+run_wrapper fetch-logos fixtures/resume.json --dry-run --update-json --token dummy >/dev/null
 
 echo "==> Test 4: publications from JSON bibfiles"
 run_wrapper build fixtures/resume-with-bibfiles.json --out build/out-from-json >/dev/null

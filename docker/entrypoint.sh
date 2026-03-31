@@ -10,7 +10,7 @@ usage() {
   cat <<'USAGE'
 Usage:
   vita-pipeline [build|pipeline] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
-  vita-pipeline fetch-logos <resume.json> [--overwrite] [--dry-run] [--token <token>]
+  vita-pipeline fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token <token>]
   vita-pipeline update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   vita-pipeline update-pub-numbers <resume.json> [--html <path>]
   vita-pipeline update-inline-pubs <resume.json> [bibfiles...]
@@ -164,7 +164,7 @@ run_fetch_logos() {
   local -a args=("$resume_path" "--logos-dir" "$logos_dir")
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --overwrite|--dry-run)
+      --overwrite|--dry-run|--update-json)
         args+=("$1")
         shift
         ;;

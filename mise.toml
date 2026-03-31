@@ -69,6 +69,7 @@ usage = '''
 arg "<resume>" help="JSONresume file"
 flag "--overwrite" help="Overwrite existing logo files"
 flag "--dry-run" help="Show what would be downloaded"
+flag "--update-json" help="Write matching Logo.dev URLs into work and education image fields"
 flag "--token <token>" help="Logo.dev publishable API key for logo access"
 '''
 run = '''
@@ -90,6 +91,9 @@ if [[ -n "${usage_overwrite:-}" ]]; then
 fi
 if [[ -n "${usage_dry_run:-}" ]]; then
   args+=("--dry-run")
+fi
+if [[ -n "${usage_update_json:-}" ]]; then
+  args+=("--update-json")
 fi
 if [[ -n "${usage_token:-}" ]]; then
   args+=("--token" "${usage_token}")

@@ -17,7 +17,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Iterable, Optional, Tuple
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 
 LOGODEV_LOGO = "https://img.logo.dev/{domain}?token={token}&retina=true&fallback=404"
@@ -49,9 +49,13 @@ def extract_domain(url: str) -> Optional[str]:
     return domain
 
 
+def logo_url_for_domain(domain: str, token: str) -> str:
+    return LOGODEV_LOGO.format(domain=domain, token=token)
+
+
 def iter_work_entries(resume: dict) -> Iterable[Tuple[str, str]]:
     for entry in resume.get("work", []):
-        name = entry.get("name", "").strip()
+        name = entry.get("name", "").strip() or entry.get("company", "").strip()
         url = entry.get("url", "").strip()
         if name:
             yield name, url
@@ -63,6 +67,26 @@ def iter_education_entries(resume: dict) -> Iterable[Tuple[str, str]]:
         url = entry.get("url", "").strip() or entry.get("website", "").strip()
         if name:
             yield name, url
+
+
+def iter_work_entry_objects(resume: dict) -> Iterable[Tuple[str, Dict[str, Any]]]:
+    for entry in resume.get("work", []):
+        name = entry.get("name", "").strip() or entry.get("company", "").strip()
+        if name:
+            yield name, entry
+
+
+def iter_education_entry_objects(resume: dict) -> Iterable[Tuple[str, Dict[str, Any]]]:
+    for entry in resume.get("education", []):
+        name = entry.get("institution", "").strip() or entry.get("name", "").strip()
+        if name:
+            yield name, entry
+
+
+def save_resume(path: Path, resume: dict) -> None:
+    with path.open("w", encoding="utf-8") as handle:
+        json.dump(resume, handle, ensure_ascii=False, indent=2)
+        handle.write("\n")
 
 
 def _ext_from_content_type(content_type: str) -> Optional[str]:
@@ -140,6 +164,11 @@ def main() -> int:
         help="Overwrite existing logo files",
     )
     parser.add_argument(
+        "--update-json",
+        action="store_true",
+        help="Write matching Logo.dev URLs into work/education image fields",
+    )
+    parser.add_argument(
         "--token",
         default=os.environ.get("LOGODEV_TOKEN", ""),
         help="Logo.dev API token (or set LOGODEV_TOKEN in environment)",
@@ -160,6 +189,8 @@ def main() -> int:
     if not args.token:
         print("error: missing Logo.dev token (use --token or LOGODEV_TOKEN)")
         return 2
+
+    updated_entries = 0
 
     for company, url in iter_work_entries(resume):
         if company in seen:
@@ -232,6 +263,26 @@ def main() -> int:
             print(f"saved: {institution} -> {saved}")
         else:
             print(f"failed: {institution} ({domain})")
+
+    if args.update_json and not args.dry_run:
+        for _, entry in iter_work_entry_objects(resume):
+            url = entry.get("url", "").strip()
+            domain = extract_domain(url)
+            if not domain:
+                continue
+            entry["image"] = logo_url_for_domain(domain, args.token)
+            updated_entries += 1
+
+        for _, entry in iter_education_entry_objects(resume):
+            url = entry.get("url", "").strip() or entry.get("website", "").strip()
+            domain = extract_domain(url)
+            if not domain:
+                continue
+            entry["image"] = logo_url_for_domain(domain, args.token)
+            updated_entries += 1
+
+        save_resume(args.resume, resume)
+        print(f"updated JSON image fields: {updated_entries}")
 
     return 0
 
