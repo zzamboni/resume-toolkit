@@ -198,44 +198,44 @@ assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
 
-echo "==> Test 11b: project visible URLs in PDF"
+echo "==> Test 12: project visible URLs in PDF"
 run_wrapper build fixtures/resume-project-visible-urls.json --out build/out-project-visible-urls >/dev/null
 assert_file "$WORK_DIR/build/out-project-visible-urls/vita/resume-project-visible-urls.typ"
 assert_contains "$WORK_DIR/build/out-project-visible-urls/vita/resume-project-visible-urls.typ" '#link\("https://example\.com/project"\)\[Example Project\]'
 assert_contains "$WORK_DIR/build/out-project-visible-urls/vita/resume-project-visible-urls.typ" '#text\(size: 9pt, fill: rgb\("#666666"\)\)\[\(example\.com/project\)\]'
 
-echo "==> Test 11c: note visible URLs in PDF"
+echo "==> Test 13: note visible URLs in PDF"
 run_wrapper build fixtures/resume-visible-urls-notes.json --out build/out-visible-urls-notes >/dev/null
 assert_file "$WORK_DIR/build/out-visible-urls-notes/vita/resume-visible-urls-notes.typ"
 assert_contains "$WORK_DIR/build/out-visible-urls-notes/vita/resume-visible-urls-notes.typ" '#link\("https://example\.com/vita/publications/"\)\[Full list online\]'
 assert_contains "$WORK_DIR/build/out-visible-urls-notes/vita/resume-visible-urls-notes.typ" '#text\(size: 9pt, fill: rgb\("#666666"\)\)\[\(example\.com/vita/publications\)\]'
 
-echo "==> Test 11d: markdown note visible URLs in PDF"
+echo "==> Test 14: markdown note visible URLs in PDF"
 run_wrapper build fixtures/resume-visible-urls-project-note.json --out build/out-visible-urls-project-note >/dev/null
 assert_file "$WORK_DIR/build/out-visible-urls-project-note/vita/resume-visible-urls-project-note.typ"
 assert_contains "$WORK_DIR/build/out-visible-urls-project-note/vita/resume-visible-urls-project-note.typ" 'See the #link\("https://example\.com/vita/publications/"\)\[_online publications list_\]'
 assert_contains "$WORK_DIR/build/out-visible-urls-project-note/vita/resume-visible-urls-project-note.typ" '#link\("https://example\.com/vita/publications/"\)\[#text\(size: 9pt, fill: rgb\("#666666"\)\)\[\(example\.com/vita/publications\)\]\]'
 
-echo "==> Test 12: custom publications label"
+echo "==> Test 15: custom publications label"
 run_wrapper build fixtures/resume-publications-custom-label.json --out build/out-custom-label >/dev/null
 assert_file "$WORK_DIR/build/out-custom-label/vita/publications/index.html"
 assert_file "$WORK_DIR/build/out-custom-label/vita/publications/resume-publications-custom-label-pubs.pdf"
 assert_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Research Output'
 assert_not_contains "$WORK_DIR/build/out-custom-label/vita/publications/index.html" 'Example Person &mdash; Publications'
 
-echo "==> Test 13: custom publications floating links"
+echo "==> Test 16: custom publications floating links"
 run_wrapper build fixtures/resume-publications-custom-links.json --out build/out-custom-links >/dev/null
 assert_file "$WORK_DIR/build/out-custom-links/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.pdf"'
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.bib"'
 
-echo "==> Test 14: work entries support company and avoid empty grouping"
+echo "==> Test 17: work entries support company and avoid empty grouping"
 run_wrapper build fixtures/resume-work-company.json --out build/out-work-company >/dev/null
 assert_file "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ"
 assert_contains "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ" 'society: \[Acme Corp\]'
 assert_count "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ" '^#cv-entry-start\(' 1
 
-echo "==> Test 12: publications floating links disabled"
+echo "==> Test 18: publications floating links disabled"
 run_wrapper build fixtures/resume-publications-no-links.json --out build/out-no-links >/dev/null
 assert_file "$WORK_DIR/build/out-no-links/vita/publications/index.html"
 assert_not_contains "$WORK_DIR/build/out-no-links/vita/publications/index.html" '<nav class="floating-links"'
