@@ -11,6 +11,7 @@ usage() {
 Usage:
   vita-pipeline [build|pipeline] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
   vita-pipeline fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token <token>]
+  vita-pipeline update-logos <resume.json> [--overwrite] [--dry-run] [--token <token>]
   vita-pipeline update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   vita-pipeline update-pub-numbers <resume.json> [--html <path>]
   vita-pipeline update-inline-pubs <resume.json> [bibfiles...]
@@ -24,6 +25,7 @@ show_tasks() {
   cat <<'TASKS'
 build              Run CV + publications pipeline
 fetch-logos        Fetch company/education logos from JSON resume into /work assets
+update-logos       Fetch logos and update matching work/education image fields
 update-certs       Update certificates from Credly
 update-pub-numbers Update publication reference numbers in JSON resume
 update-inline-pubs Update inline publications in JSON resume from selected BibTeX entries
@@ -301,6 +303,10 @@ case "$1" in
   fetch-logos)
     shift
     run_fetch_logos "$@"
+    ;;
+  update-logos)
+    shift
+    run_fetch_logos "$@" --update-json
     ;;
   update-certs)
     shift

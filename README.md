@@ -62,6 +62,7 @@ You can find some further samples in the `samples/` directory:
   - [Main subcommands](#main-subcommands)
     - [`build` (default)](#build-default)
     - [`fetch-logos`](#fetch-logos)
+    - [`update-logos`](#update-logos)
     - [`update-certs`](#update-certs)
     - [`update-pub-numbers`](#update-pub-numbers)
     - [`update-inline-pubs`](#update-inline-pubs)
@@ -158,6 +159,7 @@ $ build-resume.sh --help
 Usage:
   build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
   build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token LOGODEV_TOKEN]
+  build-resume.sh [--pull] update-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
   build-resume.sh [--pull] update-pub-numbers <resume.json> [--html <path>]
   build-resume.sh [--pull] version
@@ -206,11 +208,13 @@ If no source `assets/logos/` directory is found, the pipeline will automatically
 
 <a id="orgd64b9f2"></a>
 
-### `fetch-logos`
+### `fetch-logos` / `update-logos`
 
 Download company/institution logos from the resume file into `assets/logos/` in your working directory. Uses [logo.dev](https://www.logo.dev/) to fetch logos. You need to create an API key and provide the publishable key in the `LOGODEV_TOKEN` environment variable, or using the `--token` flag.
 
 If matching logo files are found under `assets/logos/`, the `build` step will include them automatically in the generated PDF. You can also provide/update the images by hand with the appropriate name (`<company name>.png/jpg/jpeg/svg/webp/gif`).
+
+If called as `update-logos` or with the `--update-json` flag, it also updates the JSON resume file by writing the matching Logo.dev URLs into the `image` field of the corresponding `work` and `education` entries.
 
 ```sh
 build-resume.sh fetch-logos resume.json
@@ -218,10 +222,10 @@ build-resume.sh fetch-logos resume.json
 
 Options:
 
--   `--overwrite`
--   `--dry-run`
--   `--update-json`: write matching Logo.dev URLs back into `work[].image` and `education[].image`
--   `--token <token>` (or set `LOGODEV_TOKEN`)
+-   `--overwrite`: rewrite image files even if they already exist
+-   `--dry-run`: show what would be done
+-   `--update-json`: write image URLs back into the JSON file (in the `image` field of `work`/`education` entries)
+-   `--token <token>` (or set `LOGODEV_TOKEN`): publishable key from Logo.dev
 
 
 <a id="orgdc97180"></a>
