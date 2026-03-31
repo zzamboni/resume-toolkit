@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, Optional, Tuple
 
 
-LOGODEV_LOGO = "https://img.logo.dev/{domain}?token={token}&retina=true&fallback=404"
+LOGODEV_LOGO = "https://img.logo.dev/{domain}?token={token}&retina=true&fallback=404&format=png"
 
 
 def load_resume(path: Path) -> dict:
