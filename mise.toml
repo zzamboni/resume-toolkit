@@ -237,34 +237,59 @@ python scripts/update_inline_pubs.py "${args[@]}"
 '''
 
 [tasks.release]
-description = "Bump VERSION, create release tag, and push tags"
+description = "Bump VERSION, create release tag, and push with tags"
 usage = '''
-arg "<version>" help="Release version (for example: 0.2.2)"
+arg "<level>" help="Version bump level" {
+  choices "patch" "minor" "major"
+  default "patch"
+}
 '''
 run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 
-version="$usage_version"
-tag="v$version"
+level="${usage_level:-patch}"
 
 if [[ ! -f VERSION ]]; then
   echo "VERSION file not found" >&2
   exit 1
 fi
 
-printf '%s\n' "$version" > VERSION
-
-git add VERSION
-if git diff --cached --quiet -- VERSION; then
-  echo "VERSION is already $version; nothing to commit" >&2
+current_version="$(tr -d '[:space:]' < VERSION)"
+if [[ ! "$current_version" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+  echo "Invalid VERSION format: $current_version" >&2
   exit 1
 fi
 
+major="${BASH_REMATCH[1]}"
+minor="${BASH_REMATCH[2]}"
+patch="${BASH_REMATCH[3]}"
+
+case "$level" in
+  patch)
+    patch=$((patch + 1))
+    ;;
+  minor)
+    minor=$((minor + 1))
+    patch=0
+    ;;
+  major)
+    major=$((major + 1))
+    minor=0
+    patch=0
+    ;;
+esac
+
+version="${major}.${minor}.${patch}"
+tag="v$version"
+
+printf '%s\n' "$version" > VERSION
+
+git add VERSION
 git commit -m "Release $tag" -- VERSION
 git tag -a "$tag" -m "Release $tag"
 git push
-git push --tags
+git push --follow-tags
 '''
 
 [tasks.update-typst-version]
