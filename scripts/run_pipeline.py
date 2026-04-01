@@ -183,6 +183,11 @@ def default_resume_links(has_publications: bool) -> list[dict[str, str]]:
     return links
 
 
+DEFAULT_THEME_FOOTER_RIGHT = (
+    "Powered by [resume-toolkit](https://github.com/zzamboni/resume-toolkit)"
+)
+
+
 def normalize_resume(src: Path, dst: Path) -> dict:
     data = json.loads(src.read_text(encoding="utf-8"))
     resume_stem = src.stem
@@ -218,6 +223,9 @@ def normalize_resume(src: Path, dst: Path) -> dict:
 
     if "links" not in theme_options:
         theme_options["links"] = default_resume_links(bool(bib_entries))
+
+    if "footer_right" not in theme_options:
+        theme_options["footer_right"] = DEFAULT_THEME_FOOTER_RIGHT
 
     links = theme_options.get("links")
     if isinstance(links, list):
