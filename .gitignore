@@ -33,3 +33,4 @@ pubs-src/zamboni-pubs.pdf
 build/
 zamboni-*.json
 zamboni-*.bib
+.codex
