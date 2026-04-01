@@ -1,8 +1,8 @@
 # Resume Toolkit - JSONresume/BibTeX to HTML/PDF
 
-<a href="https://ghcr.io/zzamboni/resume-toolkit"><img alt="Current resume-toolkit version" src="https://img.shields.io/github/v/tag/zzamboni/resume-toolkit?label=Version"></a>
-<a href="https://github.com/zzamboni/resume-toolkit/actions"><img alt="GitHub Actions workflow status" src="https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml"></a>
-<a href="https://github.com/zzamboni/jsonresume-theme-eventide"><img alt="Eventide theme version" src="https://img.shields.io/npm/v/jsonresume-theme-eventide?label=Eventide%20theme"></a>
+[![Current resume-toolkit version](https://img.shields.io/github/v/tag/zzamboni/resume-toolkit?label=Version)](https://ghcr.io/zzamboni/resume-toolkit)
+[![GitHub Actions workflow status](https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml)](https://github.com/zzamboni/resume-toolkit/actions)
+[![Eventide theme version](https://img.shields.io/npm/v/jsonresume-theme-eventide?label=Eventide%20theme)](https://github.com/zzamboni/jsonresume-theme-eventide)
 
 `resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
 
