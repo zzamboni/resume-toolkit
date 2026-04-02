@@ -120,16 +120,16 @@ build-resume.sh resume.json pubs-src/publications.bib
 Build the bundled examples:
 
 ```sh
-build-resume.sh samples/example-resume/example-resume.json
+build-resume.sh samples/example-resume/example-resume.json --serve
 ```
 
 or
 
 ```sh
-build-resume.sh samples/john-doe-brilliantcv/john-doe-brilliantcv.json
+build-resume.sh samples/john-doe-brilliantcv/john-doe-brilliantcv.json --serve
 ```
 
-Then open <http://localhost:8080>
+Then open <http://localhost:8080> (the port may change if you run both at the same time, see the output for the correct URL).
 
 
 <a id="org1334766"></a>
