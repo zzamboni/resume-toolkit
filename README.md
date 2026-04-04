@@ -4,15 +4,29 @@
 [![GitHub Actions workflow status](https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml)](https://github.com/zzamboni/resume-toolkit/actions)
 [![Eventide theme version](https://img.shields.io/npm/v/jsonresume-theme-eventide?label=Eventide%20theme)](https://github.com/zzamboni/jsonresume-theme-eventide)
 
-`resume-toolkit` provides a reusable pipeline for converting [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX files) into:
+`resume-toolkit` allows you to produce beautiful HTML and PDF versions from your [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX) files.
 
--   Resume HTML, using the [jsonresume-theme-eventide](https://github.com/zzamboni/jsonresume-theme-eventide) theme (a fork of [jsonresume-theme-even](https://github.com/rbardini/jsonresume-theme-even));
--   Resume Typst/PDF using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) theme, automatically fetching company/school logos from [logo.dev](https://logo.dev/);
+>[!TIP]
+> **Examples:**
+> 
+> You can see a live real example at <https://zzamboni.org/vita/>.
+> 
+> You can find some further samples in the `samples/` directory:
+> 
+> - [`samples/example-resume/`](samples/example-resume): fully synthetic example which shows a variety of features.
+> - [`samples/john-doe-brilliantcv/`](samples/john-doe-brilliantcv): the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
+
+Convert from JSON Resume and BibTeX files into:
+-   Resume HTML, using the [jsonresume-theme-eventide](https://github.com/zzamboni/jsonresume-theme-eventide) theme;
+-   Resume Typst/PDF using the [brilliant-cv](https://typst.app/universe/package/brilliant-cv) theme;
 -   Standalone publications HTML page (from BibTeX);
 -   Standalone publications PDF (from BibTeX, rendered with Typst);
 -   Aggregated publications BibTeX.
 
-It also allows updating your JSONresume file with a list of certifications from [Credly](https://credly.com/) (including badges), a list of publications from BibTeX files, and links to the standalone publications HTML page.
+Additional functionality:
+- Updating the JSON Resume file with a list of certifications from [Credly](https://credly.com/), including badges;
+- Updating the JSON Resume file with a list of publications from BibTeX files (filtered by keywords and/or individual entries), and links to the standalone publications HTML page;
+- Downloading company/school logos from [logo.dev](https://logo.dev), to include in both HTML and PDF outputs.
 
 ``` mermaid
 flowchart TD
@@ -43,13 +57,6 @@ flowchart TD
       class L,R dot;
 ```
 
-You can see a live real example at <https://zzamboni.org/vita/>.
-
-You can find some further samples in the `samples/` directory:
-
-- [`samples/example-resume/`](samples/example-resume): fully synthetic example which shows a variety of features.
-- [`samples/john-doe-brilliantcv/`](samples/john-doe-brilliantcv): the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
-
 ---
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
@@ -61,14 +68,13 @@ You can find some further samples in the `samples/` directory:
   - [Output Layout](#output-layout)
   - [Main subcommands](#main-subcommands)
     - [`build` (default)](#build-default)
-    - [`fetch-logos`](#fetch-logos)
-    - [`update-logos`](#update-logos)
+    - [`fetch-logos` / `update-logos`](#fetch-logos--update-logos)
     - [`update-certs`](#update-certs)
     - [`update-pub-numbers`](#update-pub-numbers)
     - [`update-inline-pubs`](#update-inline-pubs)
     - [Other subcommands](#other-subcommands)
   - [Bibliography configuration](#bibliography-configuration)
-  - [Even theme extensions](#even-theme-extensions)
+  - [Eventide theme features](#eventide-theme-features)
     - [Font Awesome Icons](#font-awesome-icons)
     - [Certificate badges and notes](#certificate-badges-and-notes)
     - [Grouping projects by type](#grouping-projects-by-type)
@@ -92,11 +98,10 @@ You can find some further samples in the `samples/` directory:
 
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://ghcr.io/zzamboni/resume-toolkit).
 
--   Docker
--   A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described below)
--   Optional BibTeX file(s) for publications
-
-If no BibTeX files are provided, the publications outputs are skipped.
+- Linux or macOS (untested in Windows, should work if you can run bash scripts and have Docker installed)
+- Docker
+- A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described below)
+- Optional BibTeX file(s) for publications
 
 To install, download the [build-resume.sh](https://github.com/zzamboni/resume-toolkit/blob/main/build-resume.sh) script and make it executable:
 
@@ -145,9 +150,10 @@ Generated files:
 - CV HTML:  `build/<resume-stem>/vita/index.html`
 - CV Typst:  `build/<resume-stem>/vita/<resume-stem>.typ`
 - CV PDF:  `build/<resume-stem>/vita/<resume-stem>.pdf`
-- Publications HTML (if BibTeX provided): `build/<resume-stem>/vita/publications/index.html`
-- Publications PDF (if BibTeX provided): `build/<resume-stem>/vita/publications/<resume-stem>-pubs.pdf`
-- Publications aggregated BibTeX (if BibTeX provided): `build/<resume-stem>/vita/publications/<resume-stem>-pubs.bib`
+- If BibTeX files are provided:
+  - Publications HTML: `build/<resume-stem>/vita/publications/index.html`
+  - Publications PDF: `build/<resume-stem>/vita/publications/<resume-stem>-pubs.pdf`
+  - Publications aggregated BibTeX: `build/<resume-stem>/vita/publications/<resume-stem>-pubs.bib`
 
 
 <a id="org8964c26"></a>
@@ -183,8 +189,8 @@ build-resume.sh resume.json pubs-src/publications.bib
 Options:
 
 -   `--out <dir>`: output base directory (default `build/<resume-stem>`)
--   `--pubs-url <url>`: online publications URL for standalone publications PDF footer
--   `--cv-url <url>`: online CV URL for main resume PDF footer
+-   `--pubs-url <url>`: online publications URL for standalone publications PDF footer (can be specified in the JSON file with `meta.pdfthemeOptions.pubs_url`)
+-   `--cv-url <url>`: online CV URL for main resume PDF footer (can be specified in the JSON file with `meta.pdfthemeOptions.cv_url`)
 -   `--pull`: pull the configured Docker image before running and use the updated image if one is available
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
@@ -281,9 +287,11 @@ build-resume.sh shell
 
 Gives you an interactive shell inside the container.
 
+## Configuration
+
 <a id="bibliography-config"></a>
 
-## Bibliography configuration
+### Bibliography configuration
 
 If no BibTeX files are provided on the command line, the pipeline can read them from a special `publications[]` entry in your JSON resume. BibTeX files will be used to produce the standalone publications pages (HTML and PDF):
 
@@ -298,7 +306,7 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
 
 Only one `publications[]` entry may define `bibfiles`. If `name` is omitted on that entry it defaults to `"Full list online"`, and if `url` is omitted it defaults to `"publications/"`. `bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
 
-By default, publications from bib files are rendered in a separate HTML/PDF document (any publications specified directly within the `publications` list in the JSON file are rendered inline).
+By default, publications from bib files are rendered in a separate HTML/PDF document. Any publications specified directly within the `publications` list in the JSON file are rendered inline. You can update the inline list from BibTeX files with the `update-inline-pubs` command.
 
 If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the aggregated publications list directly using Typst and the `pergamon` bibliography package. HTML publications generation is unchanged.
 
