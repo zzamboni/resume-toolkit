@@ -73,19 +73,23 @@ flowchart TD
     - [`update-pub-numbers`](#update-pub-numbers)
     - [`update-inline-pubs`](#update-inline-pubs)
     - [Other subcommands](#other-subcommands)
-  - [Bibliography configuration](#bibliography-configuration)
-  - [Eventide theme features](#eventide-theme-features)
-    - [Font Awesome Icons](#font-awesome-icons)
-    - [Certificate badges and notes](#certificate-badges-and-notes)
-    - [Grouping projects by type](#grouping-projects-by-type)
-    - [Section custom ordering and labels](#section-custom-ordering-and-labels)
-      - [Ordering](#ordering)
-      - [Custom Labels](#custom-labels)
-    - [Table of contents](#table-of-contents)
-    - [Floating links](#floating-links)
+  - [Configuration](#configuration)
+    - [Bibliography configuration](#bibliography-configuration)
+      - [Selecting which BibTeX entries to use](#selecting-which-bibtex-entries-to-use)
+      - [Inline publications in the PDF CV](#inline-publications-in-the-pdf-cv)
+      - [Full vs. filtered standalone publications output](#full-vs-filtered-standalone-publications-output)
+      - [Sectioning and titles](#sectioning-and-titles)
+      - [Floating links on the standalone publications page](#floating-links-on-the-standalone-publications-page)
+      - [Combined example](#combined-example)
+    - [Eventide theme features](#eventide-theme-features)
     - [PDF theme layout](#pdf-theme-layout)
-  - [Environment Variables](#environment-variables)
+      - [Layout overrides](#layout-overrides)
+      - [Special layout keys](#special-layout-keys)
+      - [PDF-only output options](#pdf-only-output-options)
+      - [Relative links in PDF output](#relative-links-in-pdf-output)
+      - [Notes about standalone publications PDF](#notes-about-standalone-publications-pdf)
   - [Under the Hood](#under-the-hood)
+    - [Environment Variables](#environment-variables)
     - [Automated Tests](#automated-tests)
 
 <!-- markdown-toc end -->
@@ -293,7 +297,7 @@ Gives you an interactive shell inside the container.
 
 ### Bibliography configuration
 
-If no BibTeX files are provided on the command line, the pipeline can read them from a special `publications[]` entry in your JSON resume. BibTeX files will be used to produce the standalone publications pages (HTML and PDF):
+The toolkit can read BibTeX sources from a special `publications[]` entry in your JSON Resume. This is the preferred way to define generated publications output. For example:
 
 ```json
 "publications": [
@@ -304,68 +308,98 @@ If no BibTeX files are provided on the command line, the pipeline can read them 
 ]
 ```
 
-Only one `publications[]` entry may define `bibfiles`. If `name` is omitted on that entry it defaults to `"Full list online"`, and if `url` is omitted it defaults to `"publications/"`. `bibfiles` entries are resolved relative to the JSON resume file location. If `--bib` arguments are provided, they take precedence.
+Rules for this entry:
 
-By default, publications from bib files are rendered in a separate HTML/PDF document. Any publications specified directly within the `publications` list in the JSON file are rendered inline. You can update the inline list from BibTeX files with the `update-inline-pubs` command.
+-   Only one `publications[]` entry may define `bibfiles`.
+-   `bibfiles` are resolved relative to the JSON resume file.
+-   If `name` is omitted, it defaults to `"Full list online"`.
+-   If `url` is omitted, it defaults to `"publications/"`.
+-   If `--bib` arguments are provided on the command line, they take precedence over `bibfiles` from the JSON.
 
-If `meta.publicationsOptions.inline_in_pdf` is set, the resume PDF embeds the aggregated publications list directly using Typst and the `pergamon` bibliography package. HTML publications generation is unchanged.
+That `bibfiles` entry is used to generate:
 
--   If `"inline_in_pdf": true`, defaults are used:
+-   the standalone publications HTML page
+-   the standalone publications PDF
+-   the downloadable aggregated BibTeX file
+
+The regular JSON Resume `publications[]` entries are still rendered normally in the HTML CV. If you want those inline HTML publications to be generated from BibTeX, use [`update-inline-pubs`](#orgd590b0e).
+
+#### Selecting which BibTeX entries to use
+
+The generated-publications entry may also define:
+
+-   `bibentries`: explicit BibTeX entry keys
+-   `bibkeywords`: BibTeX `keywords` values to match
+
+Selection is additive: an entry is included if it matches *either* `bibentries` *or* `bibkeywords`.
+
+```json
+"publications": [
+  {
+    "authors": ["Example Person"],
+    "bibfiles": ["pubs.bib", "patents.bib"],
+    "bibentries": ["example2024paper"],
+    "bibkeywords": ["selected", "important"]
+  }
+]
+```
+
+#### Inline publications in the PDF CV
+
+If `meta.publicationsOptions.inline_in_pdf` is enabled, the resume PDF embeds publications directly using Typst and `pergamon`. In this case any individually-specified entries in the JSON file are ignored.
+
+-   If `inline_in_pdf` is `true`, these defaults are used:
     -   `ref-style: "ieee"`
     -   `ref-full: true`
     -   `ref-sorting: "ydnt"`
--   `bibentries` can be set on the generated-publications `publications[]` entry to select explicit BibTeX entry keys for inline PDF publications, and also for standalone publications when `full_standalone_list` is `false`.
--   `bibkeywords` can be set on the generated-publications `publications[]` entry to include entries whose BibTeX `keywords` contain any of the listed values for inline PDF publications, and also for standalone publications when `full_standalone_list` is `false`.
--   `full_standalone_list` defaults to `true`, meaning the standalone publications HTML/PDF pages render the full list from `bibfiles` while the inline PDF bibliography can still be filtered by `bibentries` / `bibkeywords`. Set it to `false` to apply the same filtering to the standalone publications outputs.
--   You can also pass a dictionary to configure the inline bibliography rendering, for example:
+-   If `inline_in_pdf` is an object, you can override those values:
+    -   `ref-style`
+    -   `ref-full`
+    -   `ref-sorting`
+
+Example:
 
 ```json
 "meta": {
   "publicationsOptions": {
     "inline_in_pdf": {
       "ref-style": "ieee",
-      "ref-full": true,
+      "ref-full": false,
       "ref-sorting": "ydnt"
     }
   }
 }
 ```
 
-You can also configure publication sectioning for both HTML and PDF via `meta.publicationsOptions`:
+The inline PDF bibliography always uses the filtered selection from `bibentries` / `bibkeywords`, when those are present.
 
--   `pubSections: true`: default publication section order and titles (see below)
--   `pubSections: ["..."]`: custom section order/selection (matched against BibTeX `keywords`)
--   `pubSections: false` or unset: no sectioning (single publications list)
--   `pubSectionTitles`: optional custom titles for section keys
--   `links`: optional floating action links for the publications HTML page
--   `full_standalone_list_title`: optional title for the standalone publications HTML/PDF pages (defaults to `Publications`)
+#### Full vs. filtered standalone publications output
 
-If `meta.publicationsOptions.links` is unset, the publications HTML page gets these default floating links:
+`meta.publicationsOptions.full_standalone_list` controls whether the standalone publications outputs use the full list from `bibfiles`, or the same filtered subset used inline in the PDF CV.
 
-```json
-[
-  {
-    "name": "PDF",
-    "url": "<publications>.pdf",
-    "icon": "file-pdf"
-  },
-  {
-    "name": "BibTeX",
-    "url": "<publications>.bib",
-    "icon": "tex"
-  }
-]
-```
+-   `true` (default): standalone publications HTML/PDF/BibTeX use the full list, while the inline PDF bibliography can still be filtered
+-   `false`: standalone publications HTML/PDF/BibTeX use the same filtered subset as the inline PDF bibliography
 
-`<publications>` is replaced with the generated publications base filename for the current resume, and `<resume>` is replaced with the main resume file stem. If `links` is present but empty (`[]`), no floating links are rendered. Icon names can be plain Font Awesome names like `file-pdf`, or Font Awesome style strings like `fa-regular fa-file-pdf` or `fa-brands fa-github`.
+You can also set:
 
-The same `pubSections` / `pubSectionTitles` configuration applies both to the standalone publications PDF and to inline publications rendered inside the resume PDF.
+-   `full_standalone_list_title`: title for the standalone publications HTML/PDF pages
+    -   defaults to `"Publications"`
 
-If you set `meta.site.url`, relative links are kept relative in the HTML output but are resolved against that base URL in the generated PDF outputs. This applies both to explicit `url` fields and to Markdown links embedded inside text fields such as `summary` or `highlights`.
+#### Sectioning and titles
 
-If `pubSections` is set to `true`, the following default values are used:
+You can configure publication sectioning for both the standalone publications page and the PDF bibliography outputs via `meta.publicationsOptions`:
 
-``` python
+-   `pubSections: false` or unset: no sectioning (single list)
+-   `pubSections: true`: use the default section order and titles
+-   `pubSections: ["..."]`: custom section order and selection
+
+Section names are matched against BibTeX `keywords`. Optional title overrides go in:
+
+-   `pubSectionTitles`
+
+If `pubSections` is `true`, these defaults are used:
+
+```python
 DEFAULT_SECTION_ORDER = [
     "book",
     "editorial",
@@ -391,7 +425,35 @@ DEFAULT_SECTION_TITLES = {
 }
 ```
 
-Example:
+#### Floating links on the standalone publications page
+
+`meta.publicationsOptions.links` controls the floating links shown on the standalone publications HTML page.
+
+If `links` is unset, these defaults are generated:
+
+```json
+[
+  {
+    "name": "PDF",
+    "url": "<publications>.pdf",
+    "icon": "file-pdf"
+  },
+  {
+    "name": "BibTeX",
+    "url": "<publications>.bib",
+    "icon": "tex"
+  }
+]
+```
+
+Notes:
+
+-   `<publications>` is replaced with the generated publications file stem for the current resume
+-   `<resume>` is replaced with the main resume file stem
+-   If `links` is present but empty (`[]`), no floating links are rendered
+-   Icons can be plain Font Awesome names such as `file-pdf`, or class-style strings such as `fa-regular fa-file-pdf` or `fa-brands fa-github`
+
+#### Combined example
 
 ```json
 "publications": [
@@ -399,7 +461,7 @@ Example:
     "authors": ["Example Person"],
     "bibfiles": ["pubs.bib", "patents.bib"],
     "bibkeywords": ["selected", "important"],
-    "bibentries": ["zamboni20:emacs-org-leanpub"]
+    "bibentries": ["example2024paper"]
   }
 ],
 "meta": {
@@ -409,6 +471,8 @@ Example:
       "ref-full": false,
       "ref-sorting": "ydnt"
     },
+    "full_standalone_list": true,
+    "full_standalone_list_title": "Research Output",
     "links": [
       {
         "name": "PDF",
@@ -431,183 +495,65 @@ Example:
 }
 ```
 
-<a id="even-theme-extensions"></a>
+<a id="eventide-theme-config"></a>
 
-## Eventide theme features
+### Eventide theme features
 
-The `jsonresume-theme-eventide` theme used by this toolkit is a fork of `jsonresume-theme-even`, which supports the following additional features:
+The HTML theme used by this toolkit is [jsonresume-theme-eventide](themes/jsonresume-theme-eventide/README.md), which is the source of truth for HTML theme configuration and behavior.
 
-### Font Awesome Icons
+In `resume-toolkit`, all `meta.themeOptions` values are passed through to Eventide for HTML rendering. The toolkit also adds a few defaults before rendering:
 
-By default, [Feather icons](https://feathericons.com/) are used for the profiles. You can also use [Font Awesome icons](https://fontawesome.com/) by setting the `.meta.themeOptions.icons` resume field to "fontawesome":
+-   if `meta.themeOptions.links` is not set, default floating links are generated for the resume PDF and, when applicable, the standalone publications page
+-   if `meta.themeOptions.footer_right` is not set, it defaults to `Powered by [resume-toolkit](https://github.com/zzamboni/resume-toolkit)`
+-   `<resume>` and `<publications>` placeholders in `meta.themeOptions.links[*].url` are expanded before rendering
 
-```json
-{
-  "meta": {
-    "themeOptions": {
-      "icons": "fontawesome"
-    }
-  }
-}
-```
+A small subset of `meta.themeOptions` also affects PDF rendering:
 
-### Certificate badges and notes
+-   `sections`: controls section order and selection in both HTML and PDF
+-   `sectionLabels`: controls section labels in both HTML and PDF
+-   `projectsByType`: controls project grouping in both HTML and PDF
 
-If a [certificate](https://docs.jsonresume.org/schema#certificates) entry contains an `image` field, it is used as the URL of an image to display next to the entry as a badge for the certificate.
-
-If a certificate entry contains only `name` and optionally `url` but no `issuer` or `date`, it is considered as a "note" entry and rendered at the top of the list in a different format (for example to link to a full list).
-
-### Grouping projects by type
-
-If the `.meta.themeOptions.projectsByType` is `true`, project entries are rendered as separate sections according to their `type` field, instead of as a single section.
-
-### Section custom ordering and labels
-
-#### Ordering
-
-You can override what sections are displayed, and in what order, via the `.meta.themeOptions.sections` resume field.
-
-Here's an example with all available sections in their default order:
-
-```json
-{
-  "meta": {
-    "themeOptions": {
-      "sections": [
-        "work",
-        "volunteer",
-        "education",
-        "projects",
-        "awards",
-        "certificates",
-        "publications",
-        "skills",
-        "languages",
-        "interests",
-        "references"
-      ]
-    }
-  }
-}
-```
-
-Any sections not in the above list are not registered and won't be displayed in the final render.
-
-#### Custom Labels
-
-You can override the default section labels. Particularly useful if you want to translate a resume into another language.
-
-```json
-{
-  "meta": {
-    "themeOptions": {
-      "sectionLabels": {
-        "work": "Jobs",
-        "projects": "Projekter"
-      }
-    }
-  }
-}
-```
-
-If `.meta.themeOptions.projectsByType` is `true`, you can also break out project types into individually ordered sections by using `projects:<type>` entries. For example:
-
-```json
-{
-  "meta": {
-    "themeOptions": {
-      "projectsByType": true,
-      "sections": ["work", "projects:application", "projects:library", "skills"],
-      "sectionLabels": {
-        "projects:application": "Apps",
-        "projects:library": "Libraries"
-      }
-    }
-  }
-}
-```
-
-### Table of contents
-
-You can enable a floating table of contents on the right side of the screen by setting `.meta.themeOptions.showTableOfContents` to `true`:
-
-```json
-{
-  "meta": {
-    "themeOptions": {
-      "showTableOfContents": true
-    }
-  }
-}
-```
-
-The table of contents automatically includes links to all resume sections that have content, plus a "Top" link to return to the beginning of the document. The active section is highlighted as you scroll through the resume. The table of contents is automatically hidden on smaller screens and in print mode.
-
-### Floating links
-
-You can add floating action links in the bottom-right corner by setting `.meta.themeOptions.links` to an array of `{ name, url, icon }` objects. The `icon` value can be a plain Font Awesome name like `github`, or a Font Awesome class-style string such as `fa-regular fa-file-pdf` or `fa-brands fa-github`. In the `url` field, `<resume>` is replaced with the current resume file stem and `<publications>` with the generated publications file stem before rendering.
-
-If `.meta.themeOptions.links` is not set, the toolkit provides default links for the generated PDF CV and, when a standalone publications page is built, for that publications page as well. If `links` is explicitly set to an empty list (`[]`), no resume floating links are rendered.
-
-Default generated links:
-
-```json
-[
-  { "name": "PDF version", "url": "<resume>.pdf", "icon": "fa-regular fa-file-pdf" },
-  { "name": "Publications page", "url": "publications/", "icon": "fa-quote-left" }
-]
-```
-
-The publications link is only included when the resume defines a standalone publications page via `publications[].bibfiles`.
-
-Custom example:
-
-```json
-{
-  "meta": {
-    "themeOptions": {
-      "links": [
-        { "name": "PDF", "url": "<resume>.pdf", "icon": "file-pdf" },
-        { "name": "Publications", "url": "publications/", "icon": "fa-regular fa-file-pdf" },
-        { "name": "GitHub", "url": "https://github.com/zzamboni", "icon": "github" }
-      ]
-    }
-  }
-}
-```
+For inline PDF publications, `sectionLabels.publications` is also used as the fallback publications section label unless overridden by `meta.publicationsOptions.full_standalone_list_title`.
 
 ### PDF theme layout
 
-You can override values from `brilliant-cv`'s `metadata.layout` by setting
-`meta.pdfthemeOptions.layout` in your resume JSON. Any fields you do not set
-use the defaults from brilliant-cv's built-in template.
+PDF output is rendered with Typst using the `brilliant-cv` package. Toolkit-specific PDF options live under `meta.pdfthemeOptions`.
 
-Two additional keys are also supported under `meta.pdfthemeOptions.layout` for
-section heading rendering:
+#### Layout overrides
 
-- `highlighted`
-- `letters`
-- `summary_title`
+`meta.pdfthemeOptions.layout` is deep-merged into the default `metadata.layout` used for the generated Typst document.
 
-At the `meta.pdfthemeOptions` level, you can also set `visible_urls` to
-control where compact visible URLs are shown in the PDF output. It defaults
-to `["notes"]`. Supported values are `notes`, `profiles`, `projects`,
-`all`, and `none`.
+Current defaults are:
 
-You can also set footer URLs at the `meta.pdfthemeOptions` level:
+```python
+DEFAULT_PDF_THEME_LAYOUT = {
+    "awesome_color": "skyblue",
+    "before_section_skip": "1pt",
+    "before_entry_skip": "1pt",
+    "before_entry_description_skip": "1pt",
+    "paper_size": "a4",
+    "fonts": {
+        "regular_fonts": ["Source Sans 3"],
+        "header_font": "Roboto",
+    },
+    "header": {
+        "header_align": "left",
+        "display_profile_photo": True,
+        "profile_photo_radius": "50%",
+        "info_font_size": "10pt",
+    },
+    "entry": {
+        "display_entry_society_first": True,
+        "display_logo": True,
+    },
+    "footer": {
+        "display_page_counter": False,
+        "display_footer": True,
+    },
+}
+```
 
-- `pubs_url`: URL shown in the footer of the standalone publications PDF
-- `cv_url`: URL shown in the footer of the main CV PDF
-
-Command-line `--pubs-url` and `--cv-url` values override these config entries.
-
-If `highlighted` or `letters` are set, they are passed explicitly to
-`#cv-section(...)`. If they are omitted, nothing is passed and
-`brilliant-cv`'s own defaults are used.
-
-`summary_title` is separate: it controls whether the `Summary` heading is
-rendered at all for non-empty summaries in the PDF output. It defaults to
-`false`.
+Any fields you do not set keep these defaults.
 
 Example:
 
@@ -617,9 +563,6 @@ Example:
     "pdfthemeOptions": {
       "layout": {
         "awesome_color": "red",
-        "highlighted": false,
-        "letters": 3,
-        "summary_title": true,
         "header": {
           "header_align": "center",
           "info_font_size": "9pt"
@@ -633,14 +576,93 @@ Example:
 }
 ```
 
-<a id="orgc2ef02d"></a>
+#### Special layout keys
 
-## Environment Variables
+Three keys under `meta.pdfthemeOptions.layout` are handled specially by the toolkit rather than being passed directly into `metadata.layout`:
 
--   `VITA_PIPELINE_IMAGE`: Docker image (default: `ghcr.io/zzamboni/resume-toolkit:latest`)
--   `VITA_SERVE_PORT`: serve port (default: `8080`)
--   `VITA_PIPELINE_CACHE_DIR`: host cache dir for container caches
--   `LOGODEV_TOKEN`: token used by `fetch-logos`
+- `highlighted`
+- `letters`
+- `summary_title`
+
+`highlighted` and `letters` control how section titles are rendered in the generated Typst:
+
+- if they are set, they are passed explicitly to `#cv-section(...)`
+- if they are omitted, nothing is passed, so `brilliant-cv` uses its own defaults
+
+`summary_title` controls whether a non-empty summary is preceded by a `Summary` heading in the PDF. It defaults to `false`.
+
+Example:
+
+```json
+{
+  "meta": {
+    "pdfthemeOptions": {
+      "layout": {
+        "highlighted": false,
+        "letters": 3,
+        "summary_title": true
+      }
+    }
+  }
+}
+```
+
+#### PDF-only output options
+
+At the `meta.pdfthemeOptions` level, the toolkit also supports:
+
+- `visible_urls`
+- `cv_url`
+- `pubs_url`
+
+`visible_urls` controls where compact printable URLs are shown in the PDF output. It defaults to:
+
+```json
+["notes"]
+```
+
+Supported values are:
+
+- `notes`
+- `profiles`
+- `projects`
+- `all`
+- `none`
+
+`cv_url` is shown in the footer of the main CV PDF.
+
+`pubs_url` is shown in the footer of the standalone publications PDF.
+
+Command-line `--cv-url` and `--pubs-url` values override these config entries.
+
+Example:
+
+```json
+{
+  "meta": {
+    "pdfthemeOptions": {
+      "visible_urls": ["notes", "profiles"],
+      "cv_url": "https://example.com/vita/",
+      "pubs_url": "https://example.com/vita/publications/"
+    }
+  }
+}
+```
+
+#### Relative links in PDF output
+
+If you set `meta.site.url`, relative links remain relative in HTML output but are resolved against that base URL in generated PDF output. This applies to:
+
+-   explicit `url` fields
+-   Markdown links embedded in text fields such as `summary` or `highlights`
+
+#### Notes about standalone publications PDF
+
+The standalone publications PDF uses the same `meta.pdfthemeOptions.layout` settings and section-title styling, but it also forces a few document-specific overrides:
+
+- the profile photo is always disabled
+- the footer label uses the standalone publications title
+- `meta.pdfthemeOptions.pubs_url` is rendered in that footer when set
 
 
 <a id="org79da12a"></a>
@@ -672,6 +694,16 @@ You can build the Docker image locally with:
 ``` sh
 mise toolkit-image-build
 ```
+
+<a id="orgc2ef02d"></a>
+
+### Environment Variables
+
+-   `VITA_PIPELINE_IMAGE`: Docker image (default: `ghcr.io/zzamboni/resume-toolkit:latest`)
+-   `VITA_SERVE_PORT`: serve port (default: `8080`)
+-   `VITA_PIPELINE_CACHE_DIR`: host cache dir for container caches
+-   `LOGODEV_TOKEN`: token used by `fetch-logos`
+
 
 <a id="org487a931"></a>
 
