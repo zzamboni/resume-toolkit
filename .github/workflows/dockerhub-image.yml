@@ -55,6 +55,7 @@ jobs:
           load: true
           tags: ${{ env.LOCAL_TEST_IMAGE }}
           build-args: |
+            PREWARM_CACHE=1
             VITA_TOOLKIT_VERSION=${{ steps.version.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -100,6 +101,7 @@ jobs:
           file: ./Dockerfile
           push: true
           build-args: |
+            PREWARM_CACHE=1
             VITA_TOOLKIT_VERSION=${{ steps.version.outputs.value }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

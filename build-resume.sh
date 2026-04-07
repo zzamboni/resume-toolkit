@@ -121,7 +121,6 @@ done
 exec docker run --rm $IT_ARG \
   --user "$(id -u):$(id -g)" \
   -v "$PWD":/work \
-  -v "$CACHE_DIR":/opt/vita-cache \
   -w /work \
   -e HOME=/tmp \
   -e VITA_WORKDIR=/work \
