@@ -28,11 +28,12 @@ Additional functionality:
 - Updating the JSON Resume file with a list of publications from BibTeX files (filtered by keywords and/or individual entries), and links to the standalone publications HTML page;
 - Downloading company/school logos from [logo.dev](https://logo.dev), to include in both HTML and PDF outputs.
 
-![resume-toolkit functionality diagram](images/resume-toolkit-diagram.png)
+![resume-toolkit diagram](images/resume-toolkit-diagram.png)
 <details>
   <summary>resume-toolkit diagram source</summary>
+  This details block is collapsed by default when viewed in GitHub. 
 
-``` mermaid
+```mermaid
 flowchart TD
       A[JSON Resume<br/>resume.json] --> C[resume-toolkit]
       B["BibTeX files<br/>publications.bib ...<br/>(optional)"] .-> C
