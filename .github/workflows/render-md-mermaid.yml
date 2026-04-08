@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - '**.md'
+      - 'render-md-mermaid.yml'
 
 jobs:
   render-md-mermaid:
