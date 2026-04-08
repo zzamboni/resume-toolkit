@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import os
 import signal
+import shutil
 import subprocess
 import sys
 import time
@@ -10,6 +11,7 @@ from pathlib import Path
 
 
 IMAGE = os.environ.get("VITA_PIPELINE_IMAGE", "ghcr.io/zzamboni/resume-toolkit:latest")
+ENGINE = os.environ.get("VITA_CONTAINER_ENGINE", "")
 POLL_INTERVAL = float(os.environ.get("VITA_DEV_SERVE_POLL_INTERVAL", "2"))
 ROOT = Path(__file__).resolve().parent
 
@@ -23,8 +25,23 @@ def usage() -> None:
         "  VITA_PIPELINE_IMAGE=resume-toolkit:test ./dev-serve.sh sample/example-resume.json --serve\n\n"
         "Environment:\n"
         "  VITA_PIPELINE_IMAGE            Docker image tag to watch and run\n"
+        "  VITA_CONTAINER_ENGINE         Container engine to use (docker or podman)\n"
         "  VITA_DEV_SERVE_POLL_INTERVAL   Seconds between image ID checks (default: 2)"
     )
+
+
+def resolve_container_engine() -> str:
+    if ENGINE:
+        if shutil.which(ENGINE) is None:
+            raise SystemExit(f"Configured container engine not found: {ENGINE}")
+        return ENGINE
+    for candidate in ("docker", "podman"):
+        if shutil.which(candidate) is not None:
+            return candidate
+    raise SystemExit("Neither docker nor podman was found in PATH")
+
+
+CONTAINER_ENGINE = resolve_container_engine()
 
 
 def run_capture(args: list[str]) -> str:
@@ -35,12 +52,12 @@ def run_capture(args: list[str]) -> str:
 
 
 def current_image_id() -> str:
-    return run_capture(["docker", "image", "inspect", IMAGE, "--format", "{{.Id}}"])
+    return run_capture([CONTAINER_ENGINE, "image", "inspect", IMAGE, "--format", "{{.Id}}"])
 
 
 def current_container_ids() -> list[str]:
     output = run_capture(
-        ["docker", "ps", "--filter", f"ancestor={IMAGE}", "--format", "{{.ID}}"]
+        [CONTAINER_ENGINE, "ps", "--filter", f"ancestor={IMAGE}", "--format", "{{.ID}}"]
     )
     return [line for line in output.splitlines() if line]
 
@@ -82,7 +99,7 @@ class DevServe:
 
         if container_id:
             subprocess.run(
-                ["docker", "stop", container_id],
+                [CONTAINER_ENGINE, "stop", container_id],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
                 check=False,

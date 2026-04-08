@@ -103,7 +103,7 @@ flowchart TD
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://ghcr.io/zzamboni/resume-toolkit).
 
 - Linux or macOS (untested in Windows, should work if you can run bash scripts and have Docker installed)
-- Docker
+- Docker or Podman (auto-detected, see also `VITA_CONTAINER_ENGINE` below)
 - A file in [JSON Resume](https://jsonresume.org/) format (with optional extensions as described below)
 - Optional BibTeX file(s) for publications
 
@@ -664,6 +664,18 @@ The standalone publications PDF uses the same `meta.pdfthemeOptions.layout` sett
 - the footer label uses the standalone publications title
 - `meta.pdfthemeOptions.pubs_url` is rendered in that footer when set
 
+<a id="orgc2ef02d"></a>
+
+## Environment Variables
+
+Some behavior can be configured using environment variables. The only mandatory one (if you want to fetch logos) is `LOGODEV_TOKEN`.
+
+-   `LOGODEV_TOKEN`: token used by `fetch-logos`
+-   `VITA_PIPELINE_IMAGE`: Docker image (default: `ghcr.io/zzamboni/resume-toolkit:latest`)
+-   `VITA_CONTAINER_ENGINE`: container engine to use (`docker` or `podman`). If unset, `docker` is used when available, otherwise `podman`.
+-   `VITA_SERVE_PORT`: serve port (default: `8080`)
+-   `VITA_PIPELINE_CACHE_DIR`: host cache dir for container caches
+
 
 <a id="org79da12a"></a>
 
@@ -694,16 +706,6 @@ You can build the Docker image locally with:
 ``` sh
 mise toolkit-image-build
 ```
-
-<a id="orgc2ef02d"></a>
-
-### Environment Variables
-
--   `VITA_PIPELINE_IMAGE`: Docker image (default: `ghcr.io/zzamboni/resume-toolkit:latest`)
--   `VITA_SERVE_PORT`: serve port (default: `8080`)
--   `VITA_PIPELINE_CACHE_DIR`: host cache dir for container caches
--   `LOGODEV_TOKEN`: token used by `fetch-logos`
-
 
 <a id="org487a931"></a>
 

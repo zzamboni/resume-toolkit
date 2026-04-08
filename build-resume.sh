@@ -2,6 +2,7 @@
 set -euo pipefail
 
 IMAGE="${VITA_PIPELINE_IMAGE:-ghcr.io/zzamboni/resume-toolkit:latest}"
+ENGINE="${VITA_CONTAINER_ENGINE:-}"
 PORT="${VITA_SERVE_PORT:-8080}"
 CACHE_DIR="${VITA_PIPELINE_CACHE_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/vita-pipeline}"
 PULL_IMAGE=0
@@ -10,6 +11,8 @@ mkdir -p "$CACHE_DIR"
 
 PORT_ARGS=()
 ENV_ARGS=()
+MOUNT_ARGS=()
+USER_ARGS=()
 CMD=build
 ARGS=("$@")
 
@@ -55,6 +58,27 @@ is_entrypoint_cmd() {
   return 1
 }
 
+resolve_container_engine() {
+  if [[ -n "$ENGINE" ]]; then
+    if command -v "$ENGINE" >/dev/null 2>&1; then
+      printf '%s\n' "$ENGINE"
+      return 0
+    fi
+    echo "Configured container engine not found: $ENGINE" >&2
+    exit 1
+  fi
+  if command -v docker >/dev/null 2>&1; then
+    printf 'docker\n'
+    return 0
+  fi
+  if command -v podman >/dev/null 2>&1; then
+    printf 'podman\n'
+    return 0
+  fi
+  echo "Neither docker nor podman was found in PATH" >&2
+  exit 1
+}
+
 IT_ARG="-it"
 
 case "${1:-}" in
@@ -94,10 +118,20 @@ if [[ -n "${LOGODEV_TOKEN:-}" ]]; then
   ENV_ARGS+=(-e "LOGODEV_TOKEN=$LOGODEV_TOKEN")
 fi
 
+ENGINE="$(resolve_container_engine)"
+
+if [[ "$ENGINE" == "podman" ]]; then
+  MOUNT_ARGS=(-v "$PWD":/work:Z)
+  USER_ARGS=(--userns keep-id --user "$(id -u):$(id -g)")
+else
+  MOUNT_ARGS=(-v "$PWD":/work)
+  USER_ARGS=(--user "$(id -u):$(id -g)")
+fi
+
 if [[ "$PULL_IMAGE" -eq 1 ]]; then
-  before_image_id="$(docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
-  if docker pull "$IMAGE" >/dev/null; then
-    after_image_id="$(docker image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
+  before_image_id="$("$ENGINE" image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
+  if "$ENGINE" pull "$IMAGE" >/dev/null; then
+    after_image_id="$("$ENGINE" image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
     if [[ -n "$before_image_id" && -n "$after_image_id" && "$before_image_id" != "$after_image_id" ]]; then
       echo "→ Updated image: $IMAGE"
     elif [[ -z "$before_image_id" && -n "$after_image_id" ]]; then
@@ -113,14 +147,14 @@ for a in "${ARGS[@]}"; do
     while port_in_use "$PORT"; do
       ((PORT++))
     done
-    PORT_ARGS=(-p "${PORT}:${PORT}")
+    PORT_ARGS=(-p "127.0.0.1:${PORT}:${PORT}")
     break
   fi
 done
 
-exec docker run --rm $IT_ARG \
-  --user "$(id -u):$(id -g)" \
-  -v "$PWD":/work \
+exec "$ENGINE" run --rm $IT_ARG \
+  "${USER_ARGS[@]}" \
+  "${MOUNT_ARGS[@]}" \
   -w /work \
   -e HOME=/tmp \
   -e VITA_WORKDIR=/work \
