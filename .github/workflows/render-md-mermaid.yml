@@ -7,6 +7,7 @@ on:
     paths:
       - '**.md'
       - '**.yml'
+  workflow_dispatch:
 
 jobs:
   render-md-mermaid:
