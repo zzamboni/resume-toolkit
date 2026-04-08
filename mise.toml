@@ -283,6 +283,8 @@ esac
 version="${major}.${minor}.${patch}"
 tag="v$version"
 
+git pull
+
 printf '%s\n' "$version" > VERSION
 
 git add VERSION
