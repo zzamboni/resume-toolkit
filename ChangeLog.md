@@ -2,6 +2,69 @@
 
 (AI-generated from git log, human-polished)
 
+## 2026-04-08 - v0.6.0
+
+- Added support for running the toolkit with Podman in addition to Docker, including compatible file ownership and local preview behavior.
+
+## 2026-04-07 - v0.5.9
+
+- Improved container image build reliability by restoring image cache prewarming during image builds.
+
+## 2026-04-04 - v0.5.8
+
+- Updated the Eventide HTML theme to v0.29.5.
+- Added an explicit MIT license for the toolkit project.
+
+## 2026-04-01 - v0.5.7
+
+- Added a default HTML footer attribution linking to resume-toolkit, while still allowing resumes to override it explicitly.
+
+## 2026-04-01 - v0.5.6
+
+- Updated the Eventide HTML theme to v0.29.4.
+
+## 2026-04-01 - v0.5.5
+
+- Updated the Eventide HTML theme to v0.29.3.
+
+## 2026-04-01 - v0.5.4
+
+- Updated the Eventide HTML theme to v0.29.2.
+- Improved the `mise release` task so it can bump patch, minor, or major versions automatically before tagging and pushing.
+
+## 2026-03-31 - v0.5.3
+
+- Made downloaded company and school logos use PNG output consistently.
+
+## 2026-03-31 - v0.5.2
+
+- Added the same collapsible table-of-contents menu from the Eventide theme to the standalone publications page for small screens.
+
+## 2026-03-31 - v0.5.1
+
+- Updated the Eventide HTML theme to v0.29.1.
+
+## 2026-03-31 - v0.5.0
+
+- Added support for writing fetched Logo.dev image URLs back into the JSON Resume file.
+- Added the `update-logos` command as the JSON-updating companion to `fetch-logos`.
+
+## 2026-03-30 - v0.4.4
+
+- Switched the default published container image location from Docker Hub to GHCR.
+
+## 2026-03-30 - v0.4.3
+
+- Started publishing the container image to GHCR in addition to Docker Hub.
+
+## 2026-03-30 - v0.4.2
+
+- Updated the Eventide HTML theme to v0.28.1.
+
+## 2026-03-30 - v0.4.1
+
+- Updated the Eventide HTML theme to v0.28.0.
+
 ## 2026-03-26 - v0.4.0
 
 - Switched from jsonresume-theme-even to jsonresume-theme-eventide, my fork of even which includes all the changes from  https://github.com/rbardini/jsonresume-theme-even/pull/33 - no functional changes for now.
