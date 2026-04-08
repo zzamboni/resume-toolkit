@@ -30,8 +30,8 @@ Additional functionality:
 
 ![resume-toolkit diagram](images/resume-toolkit-diagram.png)
 <details>
-  <summary>resume-toolkit diagram source</summary>
-  This details block is collapsed by default when viewed in GitHub. 
+  <summary>Diagram source</summary>
+  The diagram above is automatically rendered from the source code below.
 
 ```mermaid
 flowchart TD
@@ -56,10 +56,12 @@ flowchart TD
       classDef toolkit fill:#22d3ee,color:#0f172a,stroke:#0891b2,stroke-width:2px;
       classDef io fill:#f8fafc,color:#0f172a,stroke:#94a3b8;
       classDef hidden fill:none,stroke:none;
+      classDef ioBoxes fill:#ffffde
 
       class C toolkit;
       class A,B,D,E,F,G,H io;
       class L,R dot;
+      class CV,PUBS ioBoxes;
 ```
 </details>
 
