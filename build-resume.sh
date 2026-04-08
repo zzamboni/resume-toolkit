@@ -130,7 +130,7 @@ fi
 
 if [[ "$PULL_IMAGE" -eq 1 ]]; then
   before_image_id="$("$ENGINE" image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
-  if "$ENGINE" pull "$IMAGE" >/dev/null; then
+  if "$ENGINE" pull "$IMAGE"; then
     after_image_id="$("$ENGINE" image inspect "$IMAGE" --format '{{.Id}}' 2>/dev/null || true)"
     if [[ -n "$before_image_id" && -n "$after_image_id" && "$before_image_id" != "$after_image_id" ]]; then
       echo "→ Updated image: $IMAGE"
