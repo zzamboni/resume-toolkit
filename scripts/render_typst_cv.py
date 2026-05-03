@@ -54,15 +54,25 @@ def convert_markdown_to_typst(text: str, *, resume_data: Optional[Dict[str, Any]
             rendered += visible_url_suffix(resume_data, visible_url_category, url)
         return rendered
 
-    text = re.sub(r'\[(.+?)\]\(([^)]+)\)', replace_link, text)
-    text = convert_markdown_inline(text)
-    return text
+    result_parts: List[str] = []
+    last_end = 0
+    for match in re.finditer(r'\[(.+?)\]\(([^)]+)\)', text):
+        if match.start() > last_end:
+            result_parts.append(convert_markdown_inline(text[last_end:match.start()]))
+        result_parts.append(replace_link(match))
+        last_end = match.end()
+    if last_end < len(text):
+        result_parts.append(convert_markdown_inline(text[last_end:]))
+    if not result_parts:
+        return convert_markdown_inline(text)
+    return "".join(result_parts)
 
 
 def convert_markdown_inline(text: str) -> str:
     """Convert inline Markdown formatting (bold, italic) to Typst."""
     if not text:
         return ""
+    text = escape_typst(text)
     text = re.sub(r'\*\*([^*]+)\*\*', r'*\1*', text)
     text = re.sub(r'(?<!\*)\*(?!\*)([^*]+)\*(?!\*)', r'_\1_', text)
     return text

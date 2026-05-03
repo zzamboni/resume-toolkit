@@ -1,0 +1,15 @@
+{
+  "basics": {
+    "name": "Example Person"
+  },
+  "work": [
+    {
+      "name": "Example Co",
+      "position": "Engineer",
+      "startDate": "2024-01-01",
+      "highlights": [
+        "Revitalized the C#, Java, and Python clients."
+      ]
+    }
+  ]
+}

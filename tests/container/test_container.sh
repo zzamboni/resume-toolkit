@@ -102,6 +102,7 @@ cp "$FIXTURES_DIR/resume-project-visible-urls.json" "$WORK_DIR/fixtures/resume-p
 cp "$FIXTURES_DIR/resume-visible-urls-notes.json" "$WORK_DIR/fixtures/resume-visible-urls-notes.json"
 cp "$FIXTURES_DIR/resume-visible-urls-project-note.json" "$WORK_DIR/fixtures/resume-visible-urls-project-note.json"
 cp "$FIXTURES_DIR/resume-work-company.json" "$WORK_DIR/fixtures/resume-work-company.json"
+cp "$FIXTURES_DIR/resume-typst-escape-hash.json" "$WORK_DIR/fixtures/resume-typst-escape-hash.json"
 cp "$FIXTURES_DIR/publications.bib" "$WORK_DIR/fixtures/publications.bib"
 cp "$FIXTURES_DIR/publications-filtered.bib" "$WORK_DIR/fixtures/publications-filtered.bib"
 
@@ -241,5 +242,10 @@ echo "==> Test 18: publications floating links disabled"
 run_wrapper build fixtures/resume-publications-no-links.json --out build/out-no-links >/dev/null
 assert_file "$WORK_DIR/build/out-no-links/vita/publications/index.html"
 assert_not_contains "$WORK_DIR/build/out-no-links/vita/publications/index.html" '<nav class="floating-links"'
+
+echo "==> Test 19: Typst escapes literal hash characters in text"
+run_wrapper build fixtures/resume-typst-escape-hash.json --out build/out-typst-escape-hash >/dev/null
+assert_file "$WORK_DIR/build/out-typst-escape-hash/vita/resume-typst-escape-hash.typ"
+assert_contains "$WORK_DIR/build/out-typst-escape-hash/vita/resume-typst-escape-hash.typ" 'C\\#, Java, and Python clients\.'
 
 echo "All container tests passed."
