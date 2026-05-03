@@ -2,6 +2,10 @@
 
 (AI-generated from git log, human-polished)
 
+## 2026-05-03 - v0.6.1
+
+- Fixed escaping of special characters in Typst exporter (e.g. "#").
+
 ## 2026-04-08 - v0.6.0
 
 - Added support for running the toolkit with Podman in addition to Docker, including compatible file ownership and local preview behavior.
