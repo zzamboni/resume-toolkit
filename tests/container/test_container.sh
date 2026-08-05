@@ -7,6 +7,7 @@ FIXTURES_DIR="$ROOT_DIR/tests/container/fixtures"
 TMP_DIR="$(mktemp -d)"
 CACHE_DIR="$TMP_DIR/cache"
 WORK_DIR="$TMP_DIR/work"
+TYPOST_PACKAGE_VERSIONS_FILE="$ROOT_DIR/typst-package-versions.json"
 
 cleanup() {
     local exit_code=$?
@@ -84,6 +85,9 @@ assert_count() {
 
 require_cmd docker
 require_cmd bash
+require_cmd jq
+
+PERGAMON_VERSION="$(jq -r '.pergamon' "$TYPOST_PACKAGE_VERSIONS_FILE")"
 
 mkdir -p "$CACHE_DIR" "$WORK_DIR/fixtures"
 cp "$FIXTURES_DIR/resume.json" "$WORK_DIR/fixtures/resume.json"
@@ -151,7 +155,7 @@ run_wrapper build fixtures/resume-inline-publications.json --out build/out-inlin
 assert_file "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ"
 assert_file "$WORK_DIR/build/out-inline/vita/resume-inline-publications-vita.bib"
 assert_file "$WORK_DIR/build/out-inline/vita/publications/index.html"
-assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#import "@preview/pergamon:0\.7\.2": \*'
+assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" "#import \"@preview/pergamon:${PERGAMON_VERSION//./\\.}\": \\*"
 assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#add-bib-resource\(read\("resume-inline-publications-vita\.bib"\)\)'
 assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#let publications-style = format-citation-numeric\(\)'
 assert_contains "$WORK_DIR/build/out-inline/vita/resume-inline-publications.typ" '#let publications-ref-full = true'

@@ -24,6 +24,22 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin, urlparse
 
 SITE_URL = ""
+TYPST_PACKAGE_VERSIONS_PATH = Path(__file__).resolve().parents[1] / "typst-package-versions.json"
+
+
+def _load_typst_package_versions() -> Dict[str, str]:
+    try:
+        data = json.loads(TYPST_PACKAGE_VERSIONS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {str(key): str(value) for key, value in data.items() if isinstance(key, str)}
+
+
+_TYPST_PACKAGE_VERSIONS = _load_typst_package_versions()
+BRILLIANT_CV_VERSION = _TYPST_PACKAGE_VERSIONS.get("brilliant-cv", "3.3.0")
+PERGAMON_VERSION = _TYPST_PACKAGE_VERSIONS.get("pergamon", "0.8.0")
 
 
 def resolve_pdf_url(url: str) -> str:
@@ -1182,7 +1198,7 @@ def render_pergamon_setup(bib_path: str, config: Dict[str, Any]) -> str:
     key_list = [str(key) for key in key_list if isinstance(key, str) and key]
 
     return (
-        '#import "@preview/pergamon:0.7.2": *\n\n'
+        f'#import "@preview/pergamon:{PERGAMON_VERSION}": *\n\n'
         "#let has-keyword(keywords, wanted) = {\n"
         "  if keywords == none { false } else {\n"
         "    keywords\n"
@@ -1669,10 +1685,12 @@ def generate_typst_cv(
         inline_publications_bib_file_path = bib_path
 
     # Start with imports and metadata
-    output = """// Professional CV generated from JSONResume
-// Using brilliant-cv template
-
-#import "@preview/brilliant-cv:3.3.0": *
+    output = (
+        "// Professional CV generated from JSONResume\n"
+        "// Using brilliant-cv template\n\n"
+        f'#import "@preview/brilliant-cv:{BRILLIANT_CV_VERSION}": *\n'
+    )
+    output += """
 
 /// Add the title of a section
 ///
@@ -1736,7 +1754,7 @@ def generate_typst_cv(
   )
 }
 
-    """
+"""
 
     if inline_publications_bib and inline_publications_config is not None:
         output += render_pergamon_setup(inline_publications_bib, inline_publications_config)

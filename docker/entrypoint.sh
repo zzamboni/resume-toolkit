@@ -335,6 +335,7 @@ case "$1" in
     theme_version="unknown"
     brilliant_cv_version="unknown"
     pergamon_version="unknown"
+    typst_versions_file="$VITA_TOOLKIT_ROOT/typst-package-versions.json"
     if [[ -z "$toolkit_version" || "$toolkit_version" == "dev" || "$toolkit_version" == "unknown" ]]; then
       if [[ -f "$VITA_TOOLKIT_ROOT/VERSION" ]]; then
         toolkit_version="$(tr -d '[:space:]' < "$VITA_TOOLKIT_ROOT/VERSION")"
@@ -346,13 +347,9 @@ case "$1" in
       theme_version="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["version"])' \
         "$VITA_TOOLKIT_ROOT/themes/jsonresume-theme-eventide/package.json" 2>/dev/null || echo unknown)"
     fi
-    if [[ -f "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" ]]; then
-      brilliant_cv_version="$(sed -n 's/.*@preview\/brilliant-cv:\([0-9.][0-9.]*\).*/\1/p' \
-        "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" | head -n 1)"
-      brilliant_cv_version="${brilliant_cv_version:-unknown}"
-      pergamon_version="$(sed -n 's/.*@preview\/pergamon:\([0-9.][0-9.]*\).*/\1/p' \
-        "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" | head -n 1)"
-      pergamon_version="${pergamon_version:-unknown}"
+    if [[ -f "$typst_versions_file" ]]; then
+      brilliant_cv_version="$(jq -r '."brilliant-cv" // "unknown"' "$typst_versions_file" 2>/dev/null || echo unknown)"
+      pergamon_version="$(jq -r '."pergamon" // "unknown"' "$typst_versions_file" 2>/dev/null || echo unknown)"
     fi
     echo "resume-toolkit ${toolkit_version}"
     echo "jsonresume-theme-eventide ${theme_version}"

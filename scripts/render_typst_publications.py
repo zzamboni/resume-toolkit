@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from render_typst_cv import (
+    BRILLIANT_CV_VERSION,
     escape_typst,
     format_footer_url,
     generate_metadata,
@@ -33,10 +34,12 @@ def generate_typst_publications(
         "ref-full": True
     }
 
-    output = """// Publications list generated from BibTeX
-// Using brilliant-cv template for document layout
-
-#import "@preview/brilliant-cv:3.3.0": *
+    output = (
+        "// Publications list generated from BibTeX\n"
+        "// Using brilliant-cv template for document layout\n\n"
+        f'#import "@preview/brilliant-cv:{BRILLIANT_CV_VERSION}": *\n'
+    )
+    output += """
 
 /// Add the title of a section
 ///
