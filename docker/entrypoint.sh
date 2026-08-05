@@ -334,6 +334,7 @@ case "$1" in
     toolkit_version="${VITA_TOOLKIT_VERSION:-}"
     theme_version="unknown"
     brilliant_cv_version="unknown"
+    pergamon_version="unknown"
     if [[ -z "$toolkit_version" || "$toolkit_version" == "dev" || "$toolkit_version" == "unknown" ]]; then
       if [[ -f "$VITA_TOOLKIT_ROOT/VERSION" ]]; then
         toolkit_version="$(tr -d '[:space:]' < "$VITA_TOOLKIT_ROOT/VERSION")"
@@ -349,10 +350,14 @@ case "$1" in
       brilliant_cv_version="$(sed -n 's/.*@preview\/brilliant-cv:\([0-9.][0-9.]*\).*/\1/p' \
         "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" | head -n 1)"
       brilliant_cv_version="${brilliant_cv_version:-unknown}"
+      pergamon_version="$(sed -n 's/.*@preview\/pergamon:\([0-9.][0-9.]*\).*/\1/p' \
+        "$VITA_TOOLKIT_ROOT/scripts/render_typst_cv.py" | head -n 1)"
+      pergamon_version="${pergamon_version:-unknown}"
     fi
     echo "resume-toolkit ${toolkit_version}"
     echo "jsonresume-theme-eventide ${theme_version}"
     echo "brilliant-cv ${brilliant_cv_version}"
+    echo "pergamon ${pergamon_version}"
     echo "node $(node --version)"
     echo "python $(python3 --version | awk '{print $2}')"
     echo "typst $(typst --version | awk '{print $2}')"
