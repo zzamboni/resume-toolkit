@@ -43,7 +43,7 @@ jobs:
           echo "value=${version}" >> "$GITHUB_OUTPUT"
 
       - name: Build test image (local)
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -90,7 +90,7 @@ jobs:
 
       - name: Build and push release image
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
