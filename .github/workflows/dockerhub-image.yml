@@ -105,7 +105,7 @@ jobs:
 
       - name: Update Docker Hub description
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v5
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
