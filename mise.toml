@@ -303,6 +303,21 @@ set -euo pipefail
 ./scripts/update_typst_version.sh
 '''
 
+[tasks.refresh-root-lock]
+description = "Refresh the root npm lockfile after theme dependency changes"
+hide = true
+sources = [
+  "package.json",
+  "themes/jsonresume-theme-eventide/package.json",
+  "themes/jsonresume-theme-eventide/package-lock.json",
+]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/refresh_root_lock.sh
+'''
+
 # -----------------------------------------------------------------------------
 # Internal/helper tasks
 # -----------------------------------------------------------------------------
@@ -367,6 +382,7 @@ if [[ -n "${usage_no_cache_filter:-}" ]]; then
 fi
 
 echo Running: docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
+mise refresh-root-lock
 docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
 echo "Finished build at "$(date)
 if [[ -z "${usage_no_test:-}" ]]; then
