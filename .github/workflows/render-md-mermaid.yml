@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.1.1
+        uses: actions/checkout@v7
 
       - name: Render images for every Mermaid diagram in all Markdown files (*.md) in the repo
         uses: nielsvaneck/render-md-mermaid@v3
