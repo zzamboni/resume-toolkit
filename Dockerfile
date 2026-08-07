@@ -1,7 +1,7 @@
 FROM node:24-alpine AS base
 
 ARG VITA_TOOLKIT_VERSION=dev
-ARG TYPST_VERSION=0.14.2
+ARG TYPST_VERSION=0.15.1
 LABEL org.opencontainers.image.title="resume-toolkit"
 LABEL org.opencontainers.image.version="${VITA_TOOLKIT_VERSION}"
 ENV VITA_TOOLKIT_VERSION="${VITA_TOOLKIT_VERSION}"
