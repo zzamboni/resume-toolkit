@@ -78,10 +78,11 @@ FROM runtime AS prewarm
 ARG PREWARM_CACHE=0
 RUN if [ "$PREWARM_CACHE" = "1" ]; then \
       BRILLIANT_CV_VERSION="$(jq -r '."brilliant-cv"' /opt/vita-toolkit/typst-package-versions.json)" \
+      && FONTAWESOME_VERSION="$(jq -r '."fontawesome"' /opt/vita-toolkit/typst-package-versions.json)" \
       && PERGAMON_VERSION="$(jq -r '."pergamon"' /opt/vita-toolkit/typst-package-versions.json)" \
       && mkdir -p /tmp/typst-prime \
       && cd /tmp/typst-prime \
-      && (echo "#import \"@preview/brilliant-cv:${BRILLIANT_CV_VERSION}\""; echo '#import "@preview/fontawesome:0.6.0"'; echo "#import \"@preview/pergamon:${PERGAMON_VERSION}\": *") | typst compile - /tmp/typst-prime/prime-typst.pdf \
+      && (echo "#import \"@preview/brilliant-cv:${BRILLIANT_CV_VERSION}\""; echo "#import \"@preview/fontawesome:${FONTAWESOME_VERSION}\""; echo "#import \"@preview/pergamon:${PERGAMON_VERSION}\": *") | typst compile - /tmp/typst-prime/prime-typst.pdf \
       && rm -rf /tmp/typst-prime; \
     fi \
   && chmod -R a+rwX /opt/vita-cache
