@@ -190,6 +190,10 @@ DEFAULT_PDF_THEME_LAYOUT: Dict[str, Any] = {
         "display_entry_society_first": True,
         "display_logo": True,
     },
+    "section": {
+        "title_highlight": "first-letters",
+        "title_highlight_letters": 3,
+    },
     "footer": {
         "display_page_counter": False,
         "display_footer": True,
@@ -331,9 +335,10 @@ def render_section_heading(label: str, section_style: Optional[Dict[str, Any]] =
     args = [f'"{label}"']
     if section_style:
         if "highlighted" in section_style:
-            args.append(f'highlighted: {"true" if section_style["highlighted"] else "false"}')
+            highlight_mode = "first-letters" if section_style["highlighted"] else "none"
+            args.append(f'highlight: "{highlight_mode}"')
         if "letters" in section_style:
-            args.append(f'letters: {section_style["letters"]}')
+            args.append(f'highlight-letters: {section_style["letters"]}')
     return f'#cv-section({", ".join(args)})\n\n'
 
 
@@ -560,16 +565,15 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
     layout_str = typst_value(pdf_theme_layout)
 
     cv_url = get_pdf_theme_url(resume_data, "cv_url")
-    cv_footer = '      cv_footer: [ Curriculum Vitae - #datetime.today().display()'
+    cv_footer = '[ Curriculum Vitae - #datetime.today().display()'
     if cv_url:
         cv_url_resolved, cv_url_display = format_footer_url(cv_url)
         cv_footer += f' #"\n" #link("{escape_typst(cv_url_resolved)}")[{escape_typst(cv_url_display)}]'
-    cv_footer += ' ],'
+    cv_footer += ' ]'
 
     metadata = f'''#let metadata = (
-  language: "en",
-  name: "{escape_typst(name)}",
-  tagline: "{escape_typst(label)}",
+  header_quote: "{escape_typst(label)}",
+  cv_footer: {cv_footer},
 
   personal: (
     first_name: "{escape_typst(first_name)}",
@@ -582,22 +586,7 @@ def generate_metadata(resume_data: Dict[str, Any]) -> str:
   layout: {layout_str},
 
   inject: (
-    inject_keywords_list: [],
-  ),
-
-  lang: (
-    en: (
-      education: "Education",
-      professional: "Professional Experience",
-      certificates: "Certifications",
-      skills: "Skills",
-      projects: "Projects",
-      activities: "Professional Activities",
-      languages: "Languages",
-      date_in_present: "Present",
-{cv_footer}
-      header_quote: "{escape_typst(label)}",
-    ),
+    injected_keywords_list: (),
   ),
 )
 '''
@@ -1690,71 +1679,6 @@ def generate_typst_cv(
         "// Using brilliant-cv template\n\n"
         f'#import "@preview/brilliant-cv:{BRILLIANT_CV_VERSION}": *\n'
     )
-    output += """
-
-/// Add the title of a section
-///
-/// NOTE: If the language is non-Latin, the title highlight will not be sliced.
-///
-/// This is a copy of the function from the brilliant-cv package, but making it sticky
-/// to prevent orphan headings.
-///
-/// - title (str): The title of the section.
-/// - highlighted (bool): Whether the first n letters will be highlighted in accent color.
-/// - letters (int): The number of first letters of the title to highlight.
-/// - metadata (array): (optional) the metadata read from the TOML file.
-/// - awesome-colors (array): (optional) the awesome colors of the CV.
-/// -> content
-#let cv-section(
-  title,
-  highlighted: true,
-  letters: 3,
-  metadata: none,
-  // New parameter names (recommended)
-  awesome-colors: none,
-  // Old parameter names (deprecated, for backward compatibility)
-  awesomeColors: _awesome-colors,
-) = context {
-  let metadata = if metadata != none { metadata } else { cv-metadata.get() }
-  // Backward compatibility logic (remove this block when deprecating)
-  let awesome-colors = if awesome-colors != none {
-    awesome-colors
-  } else {
-    // TODO: Add deprecation warning in future version
-    // Currently Typst doesn't have a standard warning mechanism for user functions
-    awesomeColors
-  }
-
-  let lang = metadata.language
-  let non-latin = _is-non-latin(lang)
-  let before-section-skip = _get-layout-value(metadata, "before_section_skip", 1pt)
-  let accent-color = _set-accent-color(awesome-colors, metadata)
-  let highlighted-text = title.slice(0, letters)
-  let normal-text = title.slice(letters)
-
-  let section-title-style(str, color: black) = {
-    text(size: 16pt, weight: "bold", fill: color, str)
-  }
-
-  v(before-section-skip)
-  block(
-    sticky: true,
-    [#if non-latin {
-      section-title-style(title, color: accent-color)
-    } else {
-      if highlighted {
-        section-title-style(highlighted-text, color: accent-color)
-        section-title-style(normal-text, color: black)
-      } else {
-        section-title-style(title, color: black)
-      }
-    }
-    #h(2pt)
-    #box(width: 1fr, line(stroke: 0.9pt, length: 100%))]
-  )
-}
-
-"""
 
     if inline_publications_bib and inline_publications_config is not None:
         output += render_pergamon_setup(inline_publications_bib, inline_publications_config)

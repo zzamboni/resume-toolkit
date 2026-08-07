@@ -39,66 +39,6 @@ def generate_typst_publications(
         "// Using brilliant-cv template for document layout\n\n"
         f'#import "@preview/brilliant-cv:{BRILLIANT_CV_VERSION}": *\n'
     )
-    output += """
-
-/// Add the title of a section
-///
-/// NOTE: If the language is non-Latin, the title highlight will not be sliced.
-///
-/// This is a copy of the function from the brilliant-cv package, but making it sticky
-/// to prevent orphan headings.
-///
-/// - title (str): The title of the section.
-/// - highlighted (bool): Whether the first n letters will be highlighted in accent color.
-/// - letters (int): The number of first letters of the title to highlight.
-/// - metadata (array): (optional) the metadata read from the TOML file.
-/// - awesome-colors (array): (optional) the awesome colors of the CV.
-/// -> content
-#let cv-section(
-  title,
-  highlighted: true,
-  letters: 3,
-  metadata: none,
-  awesome-colors: none,
-  awesomeColors: _awesome-colors,
-) = context {
-  let metadata = if metadata != none { metadata } else { cv-metadata.get() }
-  let awesome-colors = if awesome-colors != none {
-    awesome-colors
-  } else {
-    awesomeColors
-  }
-
-  let lang = metadata.language
-  let non-latin = _is-non-latin(lang)
-  let before-section-skip = _get-layout-value(metadata, "before_section_skip", 1pt)
-  let accent-color = _set-accent-color(awesome-colors, metadata)
-  let highlighted-text = title.slice(0, letters)
-  let normal-text = title.slice(letters)
-
-  let section-title-style(str, color: black) = {
-    text(size: 16pt, weight: "bold", fill: color, str)
-  }
-
-  v(before-section-skip)
-  block(
-    sticky: true,
-    [#if non-latin {
-      section-title-style(title, color: accent-color)
-    } else {
-      if highlighted {
-        section-title-style(highlighted-text, color: accent-color)
-        section-title-style(normal-text, color: black)
-      } else {
-        section-title-style(title, color: black)
-      }
-    }
-    #h(2pt)
-    #box(width: 1fr, line(stroke: 0.9pt, length: 100%))]
-  )
-}
-
-"""
     output += render_pergamon_setup(bib_filename, style_config)
     output += generate_metadata(resume_data)
     output += "\n"
@@ -111,15 +51,11 @@ def generate_typst_publications(
     output += "      display_profile_photo: false,\n"
     output += "    ),\n"
     output += "  ),\n"
-    output += "  lang: metadata.lang + (\n"
-    output += "    en: metadata.lang.en + (\n"
-    output += f'      cv_footer: [ {escape_typst(publications_label)} - #datetime.today().display()'
+#    output += f'  header_quote: "",\n'
+    output += f'  cv_footer: [ {escape_typst(publications_label)} - #datetime.today().display()'
     if pubs_url:
-        output += f' #"\\n" #link("{escape_typst(pubs_url)}")[{escape_typst(pubs_url_display)}]'
+        output += f' #"\\n" #link("{escape_typst(pubs_url_resolved)}")[{escape_typst(pubs_url_display)}]'
     output += " ],\n"
-#    output += '      header_quote: "",\n'
-    output += "    ),\n"
-    output += "  ),\n"
     output += ")\n\n"
     output += "#show: cv.with(\n"
     output += "  metadata_pub,\n"
