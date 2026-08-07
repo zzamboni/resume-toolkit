@@ -2,6 +2,15 @@
 
 (AI-generated from git log, human-polished)
 
+## 2026-08-07 - v0.7.0
+
+- Updated output to use brilliant-cv v4.1.0 (previously v3.3.0).
+- Updated the Eventide theme to v0.29.12.
+- Internal improvements:
+  - Extracted Typst package versions into typst-package-versions.json to make future updates easier.
+  - Updated versions and improved github workflow configurations.
+  - Updated Typst used to latest version v0.15.1.
+
 ## 2026-05-03 - v0.6.1
 
 - Fixed escaping of special characters in Typst exporter (e.g. "#").
