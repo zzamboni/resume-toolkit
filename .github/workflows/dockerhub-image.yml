@@ -76,7 +76,7 @@ jobs:
       - name: Extract Docker metadata
         if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ env.IMAGE_NAME }}
