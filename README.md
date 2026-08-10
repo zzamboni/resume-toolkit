@@ -689,40 +689,12 @@ Some behavior can be configured using environment variables. The only mandatory 
 
 ## Under the Hood
 
-The wrapper runs:
+Maintainer-oriented documentation now lives in [DEVELOPMENT.md](DEVELOPMENT.md).
 
--   containerized entrypoint in `docker/entrypoint.sh`
--   pipeline script `scripts/run_pipeline.sh`
--   supporting converters in `scripts/`
+That guide covers:
 
-The container uses `themes/jsonresume-theme-eventide` as a git submodule, pointing to <https://github.com/zzamboni/jsonresume-theme-eventide>.
-
-Clone with submodules enabled:
-
-```sh
-git clone --recurse-submodules https://github.com/zzamboni/resume-toolkit.git
-```
-
-If you already cloned without submodules:
-
-```sh
-git submodule update --init --recursive
-```
-
-You can build the Docker image locally with:
-
-``` sh
-mise toolkit-image-build
-```
-
-<a id="org487a931"></a>
-
-### Automated Tests
-
-Container integration tests live under `tests/container/`.
-
-Run tests:
-
-```sh
-mise test-toolkit
-```
+- local image builds and tests
+- relevant `mise` tasks
+- release workflow
+- theme/submodule update workflow
+- Typst package version management
