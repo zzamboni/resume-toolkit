@@ -236,6 +236,85 @@ cd "$VITA_TOOLKIT_ROOT"
 python scripts/update_inline_pubs.py "${args[@]}"
 '''
 
+
+# -----------------------------------------------------------------------------
+# Internal/helper tasks
+# -----------------------------------------------------------------------------
+
+[tasks.bootstrap]
+description = "Install/update project dependencies (Python + npm)"
+sources = ["requirements.txt", "package-lock.json", "package.json", "mise.toml"]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+uv pip sync requirements.txt
+
+# Build the local theme first so the root `file:` dependency includes dist/.
+(
+  cd themes/jsonresume-theme-eventide
+  if [ -f package-lock.json ]; then
+    npm ci --ignore-scripts
+  else
+    npm install --ignore-scripts
+  fi
+  # Force-enable scripts here so prebuild generates schema.d.ts.
+  NPM_CONFIG_IGNORE_SCRIPTS=false npm run build
+)
+
+if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
+'''
+
+[tasks.toolkit-image-build]
+description = "Build standalone toolkit Docker image"
+usage = '''
+flag "--no-cache" help="Build Docker image without layer cache"
+flag "--no-cache-filter <filter>" var=#true help="Do not use cache for specific build stage(s); repeatable"
+flag "--no-test" help="Do not run toolkit tests after build"
+'''
+sources = [
+  "Dockerfile",
+  ".dockerignore",
+  "package.json",
+  "package-lock.json",
+  "requirements.txt",
+  "scripts/*",
+  "templates/*",
+  "assets/**/*",
+  "themes/jsonresume-theme-eventide/**/*",
+  "docker/*",
+]
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+docker_args=()
+if [[ -n "${usage_no_cache:-}" ]]; then
+  docker_args+=(--no-cache)
+fi
+if [[ -n "${usage_no_cache_filter:-}" ]]; then
+  read -r -a cache_filters <<< "$usage_no_cache_filter"
+  for filter in "${cache_filters[@]}"; do
+    docker_args+=(--no-cache-filter "$filter")
+  done
+fi
+
+echo Running: docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
+mise refresh-root-lock
+docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
+echo "Finished build at "$(date)
+if [[ -z "${usage_no_test:-}" ]]; then
+   mise test-toolkit
+fi
+echo "Finished tests at "$(date)
+'''
+
+[tasks.test-toolkit]
+description = "Run toolkit integration tests"
+usage = '''
+arg "[image]" help="Docker image to test" default="{{vars.pipeline_docker_image}}"
+'''
+run = "tests/container/test_container.sh \"$usage_image\""
+
 [tasks.release]
 description = "Bump VERSION, create release tag, and push with tags"
 usage = '''
@@ -303,9 +382,17 @@ set -euo pipefail
 ./scripts/update_typst_version.sh
 '''
 
+[tasks.update-typst-package-versions]
+description = "Update pinned Typst package versions to the latest published preview releases"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/update_typst_package_versions.sh
+'''
+
 [tasks.refresh-root-lock]
 description = "Refresh the root npm lockfile after theme dependency changes"
-hide = true
 sources = [
   "package.json",
   "themes/jsonresume-theme-eventide/package.json",
@@ -317,84 +404,3 @@ set -euo pipefail
 
 ./scripts/refresh_root_lock.sh
 '''
-
-# -----------------------------------------------------------------------------
-# Internal/helper tasks
-# -----------------------------------------------------------------------------
-
-[tasks.bootstrap]
-description = "Install/update project dependencies (Python + npm)"
-hide = true
-sources = ["requirements.txt", "package-lock.json", "package.json", "mise.toml"]
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-
-uv pip sync requirements.txt
-
-# Build the local theme first so the root `file:` dependency includes dist/.
-(
-  cd themes/jsonresume-theme-eventide
-  if [ -f package-lock.json ]; then
-    npm ci --ignore-scripts
-  else
-    npm install --ignore-scripts
-  fi
-  # Force-enable scripts here so prebuild generates schema.d.ts.
-  NPM_CONFIG_IGNORE_SCRIPTS=false npm run build
-)
-
-if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
-'''
-
-[tasks.toolkit-image-build]
-description = "Build standalone toolkit Docker image"
-hide = true
-usage = '''
-flag "--no-cache" help="Build Docker image without layer cache"
-flag "--no-cache-filter <filter>" var=#true help="Do not use cache for specific build stage(s); repeatable"
-flag "--no-test" help="Do not run toolkit tests after build"
-'''
-sources = [
-  "Dockerfile",
-  ".dockerignore",
-  "package.json",
-  "package-lock.json",
-  "requirements.txt",
-  "scripts/*",
-  "templates/*",
-  "assets/**/*",
-  "themes/jsonresume-theme-eventide/**/*",
-  "docker/*",
-]
-run = '''
-#!/usr/bin/env bash
-set -euo pipefail
-docker_args=()
-if [[ -n "${usage_no_cache:-}" ]]; then
-  docker_args+=(--no-cache)
-fi
-if [[ -n "${usage_no_cache_filter:-}" ]]; then
-  read -r -a cache_filters <<< "$usage_no_cache_filter"
-  for filter in "${cache_filters[@]}"; do
-    docker_args+=(--no-cache-filter "$filter")
-  done
-fi
-
-echo Running: docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
-mise refresh-root-lock
-docker build "${docker_args[@]}" --build-arg PREWARM_CACHE=1 -t "{{vars.pipeline_docker_image}}" .
-echo "Finished build at "$(date)
-if [[ -z "${usage_no_test:-}" ]]; then
-   mise test-toolkit
-fi
-echo "Finished tests at "$(date)
-'''
-
-[tasks.test-toolkit]
-description = "Run toolkit integration tests"
-hide = true
-usage = '''
-arg "[image]" help="Docker image to test" default="{{vars.pipeline_docker_image}}"
-'''
-run = "tests/container/test_container.sh \"$usage_image\""
