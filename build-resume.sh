@@ -79,11 +79,14 @@ resolve_container_engine() {
   exit 1
 }
 
-IT_ARG="-it"
+IT_ARGS=()
+if [[ -t 0 && -t 1 ]]; then
+  IT_ARGS=(-it)
+fi
 
 case "${1:-}" in
   --no-it)
-    IT_ARG=""
+    IT_ARGS=()
     shift
     ;;
 esac
@@ -152,7 +155,7 @@ for a in "${ARGS[@]}"; do
   fi
 done
 
-exec "$ENGINE" run --rm $IT_ARG \
+exec "$ENGINE" run --rm "${IT_ARGS[@]}" \
   "${USER_ARGS[@]}" \
   "${MOUNT_ARGS[@]}" \
   -w /work \

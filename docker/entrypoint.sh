@@ -335,6 +335,7 @@ case "$1" in
     theme_version="unknown"
     brilliant_cv_version="unknown"
     pergamon_version="unknown"
+    fontawesome_version="unknown"
     typst_versions_file="$VITA_TOOLKIT_ROOT/typst-package-versions.json"
     if [[ -z "$toolkit_version" || "$toolkit_version" == "dev" || "$toolkit_version" == "unknown" ]]; then
       if [[ -f "$VITA_TOOLKIT_ROOT/VERSION" ]]; then
@@ -349,15 +350,38 @@ case "$1" in
     fi
     if [[ -f "$typst_versions_file" ]]; then
       brilliant_cv_version="$(jq -r '."brilliant-cv" // "unknown"' "$typst_versions_file" 2>/dev/null || echo unknown)"
+      fontawesome_version="$(jq -r '."fontawesome" // "unknown"' "$typst_versions_file" 2>/dev/null || echo unknown)"
       pergamon_version="$(jq -r '."pergamon" // "unknown"' "$typst_versions_file" 2>/dev/null || echo unknown)"
     fi
-    echo "resume-toolkit ${toolkit_version}"
-    echo "jsonresume-theme-eventide ${theme_version}"
-    echo "brilliant-cv ${brilliant_cv_version}"
-    echo "pergamon ${pergamon_version}"
-    echo "node $(node --version)"
-    echo "python $(python3 --version | awk '{print $2}')"
-    echo "typst $(typst --version | awk '{print $2}')"
+    node_version="$(node --version)"
+    python_version="$(python3 --version | awk '{print $2}')"
+    typst_version="$(typst --version | awk '{print $2}')"
+    if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+      bold=$'\033[1m'
+      dim=$'\033[2m'
+      cyan=$'\033[36m'
+      reset=$'\033[0m'
+      printf '%sresume-toolkit%s %s%s%s\n' "$bold" "$reset" "$cyan" "$toolkit_version" "$reset"
+      printf '%sHTML theme%s\n' "$dim" "$reset"
+      printf '  %-28s %s\n' 'jsonresume-theme-eventide' "$theme_version"
+      printf '%sTypst packages%s\n' "$dim" "$reset"
+      printf '  %-28s %s\n' 'brilliant-cv' "$brilliant_cv_version"
+      printf '  %-28s %s\n' 'fontawesome' "$fontawesome_version"
+      printf '  %-28s %s\n' 'pergamon' "$pergamon_version"
+      printf '%sRuntime%s\n' "$dim" "$reset"
+      printf '  %-28s %s\n' 'node' "$node_version"
+      printf '  %-28s %s\n' 'python' "$python_version"
+      printf '  %-28s %s\n' 'typst' "$typst_version"
+    else
+      echo "resume-toolkit ${toolkit_version}"
+      echo "jsonresume-theme-eventide ${theme_version}"
+      echo "brilliant-cv ${brilliant_cv_version}"
+      echo "fontawesome ${fontawesome_version}"
+      echo "pergamon ${pergamon_version}"
+      echo "node ${node_version}"
+      echo "python ${python_version}"
+      echo "typst ${typst_version}"
+    fi
     ;;
   *)
     echo "Unknown command: $1" >&2
