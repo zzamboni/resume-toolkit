@@ -2,7 +2,7 @@
 # Global tools / variables / paths
 # -----------------------------------------------------------------------------
 [tools]
-python = "3.14.2"
+python = "3.14.7"
 uv = "latest"
 watchexec = "latest"
 
@@ -388,6 +388,46 @@ run = '''
 #!/usr/bin/env bash
 set -euo pipefail
 
+./scripts/update_typst_package_versions.sh
+'''
+
+[tasks.update-node-version]
+description = "Update the pinned Node.js base image major to the latest LTS release"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/update_node_version.sh
+'''
+
+[tasks.update-python-version]
+description = "Update the pinned Python tool version to the latest supported stable release"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/update_python_version.sh
+'''
+
+[tasks.update-runtime-versions]
+description = "Update pinned Node.js and Python runtime versions"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/update_node_version.sh
+./scripts/update_python_version.sh
+'''
+
+[tasks.update-all-versions]
+description = "Update all runtime, Typst and package versions"
+run = '''
+#!/usr/bin/env bash
+set -euo pipefail
+
+./scripts/update_node_version.sh
+./scripts/update_python_version.sh
+./scripts/update_typst_version.sh
 ./scripts/update_typst_package_versions.sh
 '''
 

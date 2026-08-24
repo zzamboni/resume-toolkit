@@ -8,6 +8,7 @@ repo:
 - building and testing the container image
 - working with the vendored Eventide theme
 - releasing new toolkit versions
+- updating Node.js and Python runtime pins
 - updating Typst-related package versions
 - the most relevant `mise` tasks
 
@@ -20,6 +21,7 @@ At a high level:
 - `scripts/run_pipeline.py` and related scripts implement the build pipeline
 - `themes/jsonresume-theme-eventide/` is a git submodule pointing at the theme repo
 - `typst-package-versions.json` is the source of truth for Typst package pins used by the toolkit
+- `runtime-versions.json` is the source of truth for the Node and Python versions used by the toolkit
 
 The normal development loop is:
 
@@ -30,7 +32,7 @@ The normal development loop is:
 
 ## Prerequisites
 
-Recommended tools:
+Required tools:
 
 - `mise`
 - `docker` or `podman`
@@ -48,14 +50,19 @@ User-facing tasks:
 - `mise run update-certs <username> <resume.json> ...`
 - `mise run update-pub-numbers <resume.json> ...`
 - `mise run update-inline-pubs <resume.json> [bibfiles...]`
-- `mise run release patch|minor|major`
-- `mise run update-typst-version`
 
 Important maintainer tasks:
 
 - `mise toolkit-image-build`
-- `mise toolkit-image-build --no-cache`
+  - When needed: `mise toolkit-image-build --no-cache`
 - `mise test-toolkit`
+- `mise run release patch|minor|major` - default `release`
+- `mise run update-all-versions` - calls all the following:
+  - `mise run update-runtime-versions` - calls the following:
+    - `mise run update-node-version`
+    - `mise run update-python-version`
+  - `mise run update-typst-version`
+  - `mise run update-typst-package-versions`
 - `mise refresh-root-lock`
 - `mise bootstrap`
 
@@ -204,6 +211,48 @@ Then rebuild and test:
 mise toolkit-image-build --no-cache
 ```
 
+## Runtime versions
+
+The toolkit keeps explicit maintainer pins for:
+
+- the Node.js major used by the container base image
+- the Python version used by `mise`
+
+Those values live in:
+
+- `runtime-versions.json`
+
+They are then applied to:
+
+- `Dockerfile` (`FROM node:<major>-alpine`)
+- `mise.toml` (`[tools].python`)
+
+### Updating Node.js and Python
+
+Refresh both runtime pins:
+
+```sh
+mise run update-runtime-versions
+```
+
+Refresh only one of them:
+
+```sh
+mise run update-node-version
+mise run update-python-version
+```
+
+Policy:
+
+- Node.js follows the latest official LTS major release
+- Python follows the latest supported stable 3.x release branch from the Python release metadata
+
+After updating either runtime pin, rebuild and test the image:
+
+```sh
+mise toolkit-image-build --no-cache
+```
+
 ## Releasing
 
 Toolkit releases are driven by the `VERSION` file and a git tag.
@@ -274,4 +323,3 @@ For changes to the build pipeline, Typst renderer, theme integration, or image:
 2. `mise test-toolkit`
 3. manual check with at least one real resume
 4. if theme changed, make sure the submodule commit and root `package-lock.json` are both updated
-
