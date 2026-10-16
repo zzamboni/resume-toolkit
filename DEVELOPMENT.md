@@ -21,7 +21,12 @@ At a high level:
 - `scripts/run_pipeline.py` and related scripts implement the build pipeline
 - `themes/jsonresume-theme-eventide/` is a git submodule pointing at the theme repo
 - `typst-package-versions.json` is the source of truth for Typst package pins used by the toolkit
-- `runtime-versions.json` is the source of truth for the Node and Python versions used by the toolkit
+- `runtime-versions.json` tracks the container Node major and the host development Python pin; updater scripts synchronize Dockerfile/mise declarations
+
+User configuration belongs in [README.md](README.md). Eventide configuration and
+maintenance have their own guides in the theme submodule. [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
+captures development history and design decisions; its version snapshot is not a
+replacement for current manifests.
 
 The normal development loop is:
 
@@ -35,8 +40,19 @@ The normal development loop is:
 Required tools:
 
 - `mise`
-- `docker` or `podman`
+- Docker for the current `toolkit-image-build` task, which invokes `docker` explicitly
 - `git`
+
+The public wrapper also supports Podman. Local dependency installation and theme
+builds require Node.js/npm; version updaters require curl/jq and the shell tools
+used in their scripts. Some helpers use GNU-style commands, so maintainer-task
+portability on macOS needs separate verification from container usage.
+
+Initialize the theme before building:
+
+```sh
+git submodule update --init --recursive
+```
 
 The local `mise` tasks handle most recurring maintenance commands.
 
@@ -53,16 +69,15 @@ User-facing tasks:
 
 Important maintainer tasks:
 
-- `mise toolkit-image-build`
-  - When needed: `mise toolkit-image-build --no-cache`
+- `mise toolkit-image-build` (use `--no-cache` when needed)
 - `mise test-toolkit`
-- `mise run release patch|minor|major` - default `release`
-- `mise run update-all-versions` - calls all the following:
-  - `mise run update-runtime-versions` - calls the following:
-    - `mise run update-node-version`
-    - `mise run update-python-version`
-  - `mise run update-typst-version`
-  - `mise run update-typst-package-versions`
+- `mise run release patch|minor|major` (defaults to a patch bump)
+- `mise run update-all-versions`
+- `mise run update-runtime-versions`
+- `mise run update-node-version`
+- `mise run update-python-version`
+- `mise run update-typst-version`
+- `mise run update-typst-package-versions`
 - `mise refresh-root-lock`
 - `mise bootstrap`
 
@@ -93,6 +108,23 @@ Notes:
 - `toolkit-image-build` refreshes the root `package-lock.json` before building
 - by default it also runs `mise test-toolkit` after the image build
 - the built image tag defaults to `ghcr.io/zzamboni/resume-toolkit:latest`
+- local and CI builds enable `PREWARM_CACHE=1` to bundle the Typst package cache
+- `--no-cache` reruns build layers; use Docker's `--pull` separately when you need
+  to refresh the base image, for example `docker build --pull --build-arg PREWARM_CACHE=1 -t ghcr.io/zzamboni/resume-toolkit:latest .`
+
+### Restarting previews after image rebuilds
+
+From the toolkit root, forward preview arguments through the Python helper:
+
+```sh
+python3 dev_serve.py samples/example-resume/example-resume.json --serve
+```
+
+It watches the local image ID and restarts the wrapper after a rebuild, forwarding
+its arguments and stopping the preview container during cleanup. Rebuild in another
+terminal, optionally using `mise watch toolkit-image-build`. The helper uses
+`VITA_PIPELINE_IMAGE`, `VITA_CONTAINER_ENGINE`, and `VITA_DEV_SERVE_POLL_INTERVAL`
+(default two seconds). It watches local image changes, not remote registry tags.
 
 ## Running tests
 
@@ -122,12 +154,16 @@ The integration suite exercises the public wrapper and validates:
 - logo-fetch wiring
 - Typst-generation regressions
 
+Tests run against an image, not the current source tree. Rebuild after source
+changes. Failed runs retain a temporary directory for inspection. Package-version
+expectations read `typst-package-versions.json` rather than duplicating pins.
+
 After larger PDF or theme changes, also test manually with one or two real
 resumes:
 
 ```sh
-build-resume.sh zamboni-vita-general.json --serve
-build-resume.sh samples/example-resume/example-resume.json --serve
+./build-resume.sh samples/example-resume/example-resume.json --serve
+./build-resume.sh samples/john-doe-brilliantcv/john-doe-brilliantcv.json --serve
 ```
 
 ## Working with the Eventide theme
@@ -168,6 +204,22 @@ mise refresh-root-lock
 mise toolkit-image-build
 ```
 
+Check for local theme changes before switching revisions. The submodule is pinned
+to a commit, which can be newer than its package version tag. `.gitmodules`
+currently names `feat-multiple-features` as its tracking branch; inspect it before
+using remote-tracking updates. Record the intended submodule pointer and refreshed
+root lockfile in the toolkit commit.
+
+Theme validation and editor/release commands are documented in
+[the theme development guide](themes/jsonresume-theme-eventide/DEVELOPMENT.md).
+For a theme change, use `npm ci`, build, type-check, check formatting, and run
+`npm test -- --run` in that directory. Review snapshot updates when intentional
+rendering or whitespace changes alter expected HTML.
+
+The root lockfile refresh is required because the local theme manifest can change
+the dependency graph even for `npm ci --omit=dev`. Keep reproducible clean installs
+in the container rather than replacing them to bypass a stale lockfile.
+
 If you are actively developing the theme and then consuming the changes here:
 
 1. update the theme repo first
@@ -196,6 +248,16 @@ These values are used by:
 
 So for toolkit-managed Typst package upgrades, this file is the first place to
 change.
+
+To check every configured package against the official Typst package repository:
+
+```sh
+mise run update-typst-package-versions
+```
+
+The renderer targets brilliant-cv v4. Shared helpers serve both PDF exporters, so
+compile both outputs after package or renderer changes. Keep generated metadata
+inline; the old custom sticky `cv-section` workaround is no longer needed.
 
 ### Updating Typst itself
 
@@ -227,6 +289,11 @@ They are then applied to:
 - `Dockerfile` (`FROM node:<major>-alpine`)
 - `mise.toml` (`[tools].python`)
 
+The Python pin controls host development through mise. Python inside the container
+comes from Alpine's `python3` package and is not pinned by this JSON file. Node's
+container pin selects a major; refreshing the base image supplies newer patch
+versions within that major.
+
 ### Updating Node.js and Python
 
 Refresh both runtime pins:
@@ -253,9 +320,19 @@ After updating either runtime pin, rebuild and test the image:
 mise toolkit-image-build --no-cache
 ```
 
+`mise run update-all-versions` runs both runtime updaters, the Typst binary updater,
+and the Typst package updater. These are manually invoked checks, not scheduled
+updates. Review the resulting diff before building and committing. Root Dependabot
+currently checks uv and GitHub Actions; theme npm dependencies are maintained in
+the theme repository, and root Resumed updates need separate attention.
+
 ## Releasing
 
 Toolkit releases are driven by the `VERSION` file and a git tag.
+
+Before releasing, finish validation, commit intended changes, and add user-facing
+release notes to `ChangeLog.md`. The release task commits only the VERSION change;
+it does not prepare changelog entries or commit other work.
 
 Preferred flow:
 
@@ -274,7 +351,11 @@ This task will:
 5. push the branch
 6. push the tag
 
-Container publishing is handled by GitHub Actions from `v*` tags.
+Container publishing is handled by GitHub Actions from `v*` tags. CI verifies that
+the tag matches VERSION, builds/tests, and publishes to GHCR and Docker Hub with
+version aliases and `latest`. Branch/SHA tags are not published. Manual workflow
+dispatch builds/tests without publishing. Eventide has its own npm release
+workflow; releasing the toolkit does not release the theme.
 
 ## Wrapper and runtime behavior
 
@@ -299,6 +380,15 @@ Relevant environment variables:
 - `VITA_PIPELINE_CACHE_DIR`
 - `LOGODEV_TOKEN`
 
+Docker is preferred when available; set `VITA_CONTAINER_ENGINE=podman` to select
+Podman explicitly. Preserve Podman's keep-id mapping and SELinux mount labeling
+when editing the wrapper. Both engines should create output owned by the host
+user. Serving binds to all container interfaces but publishes only on localhost.
+
+`version` uses terminal formatting only when stdout is a terminal and NO_COLOR is
+unset. The wrapper allocates a TTY only when both stdin and stdout are terminals,
+so pipes and redirects retain flat `name version` output.
+
 ## Bootstrap / local dependency refresh
 
 If you need to refresh local development dependencies outside the container:
@@ -319,7 +409,8 @@ This is only needed if you want to test in the local host, but not if you are on
 
 For changes to the build pipeline, Typst renderer, theme integration, or image:
 
-1. `mise toolkit-image-build`
-2. `mise test-toolkit`
-3. manual check with at least one real resume
-4. if theme changed, make sure the submodule commit and root `package-lock.json` are both updated
+1. Run `mise toolkit-image-build`, which includes integration tests unless `--no-test` is supplied.
+2. Run `mise test-toolkit` separately if testing an existing image or if the build skipped tests.
+3. Check at least one real or bundled resume manually, including desktop/mobile HTML for visual changes.
+4. If the theme changed, include its submodule commit and refreshed root `package-lock.json`.
+5. If a pipeline stage gains inputs or options, update its incremental-build hash dependencies and relevant regression coverage.
