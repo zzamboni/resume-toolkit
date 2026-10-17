@@ -259,9 +259,9 @@ assert_contains "$WORK_DIR/build/out-typst-escape-hash/vita/resume-typst-escape-
 echo "==> Test 20: publications JSON export and LaTeX normalization"
 cat >"$WORK_DIR/fixtures/publications-json.bib" <<'BIB'
 @article{latex2026paper,
-  title = {An \\emph{Important} {JSON} Export},
+  title = {An \emph{Important} {JSON} Export},
   author = {Person, Example and Coauthor, Another},
-  journal = {Journal of \\textbf{Examples}},
+  journal = {Journal of \textbf{Examples}},
   year = {2026},
   keywords = {refereed}
 }
@@ -282,6 +282,6 @@ jq -e '
   echo "error: invalid publications JSON content: $pubs_json" >&2
   exit 1
 }
-assert_not_contains "$pubs_json" '\\\\emph|\\\\textbf|\\\\{JSON\\\\}'
+assert_not_contains "$pubs_json" '\\\emph|\\\textbf|\\\\{JSON\\\\}'
 
 echo "All container tests passed."
