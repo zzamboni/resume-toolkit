@@ -17,6 +17,7 @@ import subprocess
 
 BIB_DIR = Path(os.environ.get("PUBS_BIB_DIR", "."))
 OUT_FILE = Path(os.environ.get("PUBS_HTML", "dist/publications.html"))
+JSON_OUT_FILE = Path(os.environ["PUBS_JSON"]) if os.environ.get("PUBS_JSON") else None
 TEMPLATE_DIR = Path("templates")
 PUBS_OUT_DIR = Path(os.environ.get("PUBS_OUT_DIR", "")) if os.environ.get("PUBS_OUT_DIR") else None
 PUBS_BIB_FILENAME = os.environ.get("PUBS_BIB_FILENAME", "publications.bib")
@@ -581,7 +582,7 @@ def normalize(raw_entries, section_order, sectioning_enabled):
         e["year"] = int(e.get("year", 0))
 
         # Authors
-        e["authors"] = e.get("author", "").replace(" and ", ", ")
+        e["authors"] = latex_to_html(e.get("author", "").replace(" and ", ", "))
 
         FIELDS_TO_CLEAN = [
             "title",
@@ -592,7 +593,9 @@ def normalize(raw_entries, section_order, sectioning_enabled):
             "issuetitle",
             "institution",
             "note",
-            "howpublished"
+            "howpublished",
+            "editor",
+            "school",
         ]
 
         for field in FIELDS_TO_CLEAN:
@@ -631,6 +634,49 @@ def normalize(raw_entries, section_order, sectioning_enabled):
     # Sort entries inside sections by year desc
     return sorted(entries, key=lambda e: e["year"], reverse=True)
 
+
+def write_publications_json(sections, section_order, section_titles):
+    """Export the normalized and grouped data used by the HTML publications renderer."""
+    if JSON_OUT_FILE is None:
+        return
+    fields = ("title", "authors", "editor", "journal", "booktitle", "publisher",
+              "school", "institution", "number", "year", "doi", "note", "url",
+              "type", "howpublished")
+    output_sections = []
+    for section_id in section_order:
+        result_entries = []
+        for entry in sections.get(section_id, []):
+            key = entry.get("key") or entry.get("ID")
+            if not key:
+                continue
+            item = {"key": str(key)}
+            for field in fields:
+                value = entry.get(field)
+                if value is not None and value != "":
+                    item[field] = value
+            result_entries.append(item)
+        if result_entries:
+            output_sections.append({
+                "id": section_id,
+                "title": section_titles.get(section_id, section_id),
+                "entries": result_entries,
+            })
+
+    try:
+        links = json.loads(os.environ.get("PUBS_LINKS", "[]"))
+    except json.JSONDecodeError:
+        links = []
+    if not isinstance(links, list):
+        links = []
+
+    JSON_OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    JSON_OUT_FILE.write_text(
+        json.dumps({"sections": output_sections, "links": links},
+                   ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
 def main():
     publications_options = load_publications_options()
     sectioning_enabled, section_order, section_titles = resolve_sectioning_config(publications_options)
@@ -645,6 +691,8 @@ def main():
         s for s in section_order
         if sections.get(s)
     ] if sectioning_enabled else []
+
+    write_publications_json(sections, section_order, section_titles)
 
     selected_entries = [
         e for e in entries

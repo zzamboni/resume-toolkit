@@ -685,6 +685,7 @@ def main() -> int:
             pubs_links_json = build_publications_links(data, pubs_pdf_name, pubs_bib_name)
             pubs_html = out_pubs / "index.html"
             agg_bib = out_pubs / pubs_bib_name
+            pubs_json = out_pubs / "publications.json"
 
             pubs_html_hash_args = [
                 f"FILE:{toolkit_root / 'scripts' / 'build_publications.py'}",
@@ -697,15 +698,16 @@ def main() -> int:
             pubs_html_hash_args.extend(f"FILE:{bib}" for bib in sorted_bibs)
             pubs_html_hash = calc_hash(*pubs_html_hash_args)
             pubs_html_stamp = state_dir / "pubs-html.sha"
-            if needs_rebuild(pubs_html, pubs_html_stamp, pubs_html_hash) or needs_rebuild(
-                agg_bib, pubs_html_stamp, pubs_html_hash
-            ):
-                print("→ Building publications HTML + BibTeX")
+            if (needs_rebuild(pubs_html, pubs_html_stamp, pubs_html_hash)
+                or needs_rebuild(agg_bib, pubs_html_stamp, pubs_html_hash)
+                or needs_rebuild(pubs_json, pubs_html_stamp, pubs_html_hash)):
+                print("→ Building publications HTML + JSON + BibTeX")
                 env = os.environ.copy()
                 env.update(
                     {
                         "PUBS_BIB_DIR": str(pubs_tmp_dir),
                         "PUBS_HTML": str(pubs_html),
+                        "PUBS_JSON": str(pubs_json),
                         "PUBS_OUT_DIR": str(out_pubs),
                         "PUBS_BIB_FILENAME": pubs_bib_name,
                         "PUBS_RESUME_JSON": str(normalized_json),
@@ -720,7 +722,7 @@ def main() -> int:
                 inject_reload_if_needed(toolkit_root, pubs_html)
                 mark_built(pubs_html_stamp, pubs_html_hash)
             else:
-                print("→ Publications HTML + BibTeX up to date")
+                print("→ Publications HTML + JSON + BibTeX up to date")
 
             if not agg_bib.is_file():
                 raise SystemExit(f"Aggregated bib not found: {agg_bib}")
