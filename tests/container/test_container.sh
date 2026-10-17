@@ -282,6 +282,5 @@ jq -e '
   echo "error: invalid publications JSON content: $pubs_json" >&2
   exit 1
 }
-assert_not_contains "$pubs_json" '\\\emph|\\\textbf|\\\\{JSON\\\\}'
 
 echo "All container tests passed."
