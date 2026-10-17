@@ -30,12 +30,14 @@
         {
           "name": "PDF",
           "url": "publications/<publications>.pdf",
-          "icon": "file-pdf"
+          "icon": "file-pdf",
+          "role": "download"
         },
         {
           "name": "BibTeX",
           "url": "publications/<publications>.bib",
-          "icon": "book"
+          "icon": "book",
+          "role": "site-home"
         }
       ]
     }
