@@ -256,4 +256,32 @@ run_wrapper build fixtures/resume-typst-escape-hash.json --out build/out-typst-e
 assert_file "$WORK_DIR/build/out-typst-escape-hash/vita/resume-typst-escape-hash.typ"
 assert_contains "$WORK_DIR/build/out-typst-escape-hash/vita/resume-typst-escape-hash.typ" 'C\\#, Java, and Python clients\.'
 
+echo "==> Test 20: publications JSON export and LaTeX normalization"
+cat >"$WORK_DIR/fixtures/publications-json.bib" <<'BIB'
+@article{latex2026paper,
+  title = {An \\emph{Important} {JSON} Export},
+  author = {Person, Example and Coauthor, Another},
+  journal = {Journal of \\textbf{Examples}},
+  year = {2026},
+  keywords = {refereed}
+}
+BIB
+run_wrapper build fixtures/resume-publications-custom-sections.json fixtures/publications-json.bib --out build/out-publications-json >/dev/null
+pubs_json="$WORK_DIR/build/out-publications-json/vita/publications/publications.json"
+assert_file "$pubs_json"
+jq -e '
+  (.sections | length) == 1
+  and .sections[0].id == "refereed"
+  and .sections[0].title == "Journal Articles"
+  and (.sections[0].entries | length) == 1
+  and .sections[0].entries[0].key == "latex2026paper"
+  and .sections[0].entries[0].title == "An <em>Important</em> JSON Export"
+  and .sections[0].entries[0].journal == "Journal of <strong>Examples</strong>"
+  and (.links | type) == "array"
+' "$pubs_json" >/dev/null || {
+  echo "error: invalid publications JSON content: $pubs_json" >&2
+  exit 1
+}
+assert_not_contains "$pubs_json" '\\\\emph|\\\\textbf|\\\\{JSON\\\\}'
+
 echo "All container tests passed."
