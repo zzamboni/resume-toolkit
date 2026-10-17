@@ -685,7 +685,7 @@ def main() -> int:
             pubs_links_json = build_publications_links(data, pubs_pdf_name, pubs_bib_name)
             pubs_html = out_pubs / "index.html"
             agg_bib = out_pubs / pubs_bib_name
-            pubs_json = out_pubs / "publications.json"
+            pubs_json = out_pubs / f"{pubs_base_name}.json"
 
             pubs_html_hash_args = [
                 f"FILE:{toolkit_root / 'scripts' / 'build_publications.py'}",

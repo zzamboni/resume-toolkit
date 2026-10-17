@@ -107,12 +107,6 @@ flowchart TD
 <a id="orge0cfd3e"></a>
 
 
-The standalone publications build also emits `vita/publications/publications.json`,
-containing the same grouped, sorted and LaTeX-normalized entries as the HTML
-publication list, plus the resolved action links. This file can be consumed by
-Hugo or other renderers without re-parsing BibTeX. It is regenerated when the
-bibliography or publication settings change, or when the JSON output is missing.
-
 ## Requirements and installation
 
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://ghcr.io/zzamboni/resume-toolkit).
@@ -173,6 +167,13 @@ Generated files:
   - Publications HTML: `build/<resume-stem>/vita/publications/index.html`
   - Publications PDF: `build/<resume-stem>/vita/publications/<resume-stem>-pubs.pdf`
   - Publications aggregated BibTeX: `build/<resume-stem>/vita/publications/<resume-stem>-pubs.bib`
+  - Publications JSON: `build/<resume-stem>/vita/publications/<resume-stem>-pubs.json`
+
+The publications JSON contains the same grouped, sorted, and LaTeX-normalized
+entries as the standalone HTML bibliography, along with resolved action links.
+It can be consumed by Hugo or other renderers without parsing BibTeX again.
+The pipeline regenerates it when the bibliography or publication settings
+change, or when the JSON output is missing.
 
 
 <a id="org8964c26"></a>

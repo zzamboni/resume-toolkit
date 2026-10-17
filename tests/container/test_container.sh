@@ -132,9 +132,9 @@ assert_file "$WORK_DIR/build/out/vita/index.html"
 assert_file "$WORK_DIR/build/out/vita/resume.typ"
 assert_file "$WORK_DIR/build/out/vita/resume.pdf"
 assert_file "$WORK_DIR/build/out/vita/publications/index.html"
-assert_file "$WORK_DIR/build/out/vita/publications/publications.json"
-assert_contains "$WORK_DIR/build/out/vita/publications/publications.json" '"sections"'
-assert_contains "$WORK_DIR/build/out/vita/publications/publications.json" '"key": "example2024paper"'
+assert_file "$WORK_DIR/build/out/vita/publications/resume-pubs.json"
+assert_contains "$WORK_DIR/build/out/vita/publications/resume-pubs.json" '"sections"'
+assert_contains "$WORK_DIR/build/out/vita/publications/resume-pubs.json" '"key": "example2024paper"'
 assert_file "$WORK_DIR/build/out/vita/publications/resume-pubs.pdf"
 assert_file "$WORK_DIR/build/out/vita/publications/resume-pubs.bib"
 assert_contains "$WORK_DIR/build/out/vita/index.html" "Example Person"
@@ -207,7 +207,7 @@ run_wrapper build fixtures/resume-publications-custom-sections.json --out build/
 assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
-assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/publications.json" '"title": "Journal Articles"'
+assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/resume-publications-custom-sections-pubs.json" '"title": "Journal Articles"'
 
 echo "==> Test 12: project visible URLs in PDF"
 run_wrapper build fixtures/resume-project-visible-urls.json --out build/out-project-visible-urls >/dev/null
@@ -267,7 +267,7 @@ cat >"$WORK_DIR/fixtures/publications-json.bib" <<'BIB'
 }
 BIB
 run_wrapper build fixtures/resume-publications-custom-sections.json fixtures/publications-json.bib --out build/out-publications-json >/dev/null
-pubs_json="$WORK_DIR/build/out-publications-json/vita/publications/publications.json"
+pubs_json="$WORK_DIR/build/out-publications-json/vita/publications/resume-publications-custom-sections-pubs.json"
 assert_file "$pubs_json"
 jq -e '
   (.sections | length) == 1
