@@ -493,6 +493,7 @@ def build_publications_links(data: dict, pdf_name: str, bib_name: str) -> str:
             )
             result.append(
                 {
+                    **item,  # Preserve optional link metadata, including role.
                     "name": name.strip(),
                     "url": replaced_url.strip(),
                     "icon": icon.strip(),

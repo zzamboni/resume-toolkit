@@ -240,6 +240,18 @@ assert_file "$WORK_DIR/build/out-custom-links/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.pdf"'
 assert_contains "$WORK_DIR/build/out-custom-links/vita/publications/index.html" 'href="publications/resume-publications-custom-links-pubs\.bib"'
 
+custom_links_json="$WORK_DIR/build/out-custom-links/vita/publications/resume-publications-custom-links-pubs.json"
+assert_file "$custom_links_json"
+jq -e '
+  .links[0].role == "download"
+  and .links[1].role == "site-home"
+  and .links[0].url == "publications/resume-publications-custom-links-pubs.pdf"
+  and .links[1].url == "publications/resume-publications-custom-links-pubs.bib"
+' "$custom_links_json" >/dev/null || {
+  echo "error: publication link roles were not preserved in $custom_links_json" >&2
+  exit 1
+}
+
 echo "==> Test 17: work entries support company and avoid empty grouping"
 run_wrapper build fixtures/resume-work-company.json --out build/out-work-company >/dev/null
 assert_file "$WORK_DIR/build/out-work-company/vita/resume-work-company.typ"
