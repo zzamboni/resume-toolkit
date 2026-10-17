@@ -106,6 +106,13 @@ flowchart TD
 
 <a id="orge0cfd3e"></a>
 
+
+The standalone publications build also emits `vita/publications/publications.json`,
+containing the same grouped, sorted and LaTeX-normalized entries as the HTML
+publication list, plus the resolved action links. This file can be consumed by
+Hugo or other renderers without re-parsing BibTeX. It is regenerated when the
+bibliography or publication settings change, or when the JSON output is missing.
+
 ## Requirements and installation
 
 The recommended interface is the wrapper script `build-resume.sh`, which runs everything inside a [Docker image](https://ghcr.io/zzamboni/resume-toolkit).

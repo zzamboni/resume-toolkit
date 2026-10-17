@@ -132,6 +132,9 @@ assert_file "$WORK_DIR/build/out/vita/index.html"
 assert_file "$WORK_DIR/build/out/vita/resume.typ"
 assert_file "$WORK_DIR/build/out/vita/resume.pdf"
 assert_file "$WORK_DIR/build/out/vita/publications/index.html"
+assert_file "$WORK_DIR/build/out/vita/publications/publications.json"
+assert_contains "$WORK_DIR/build/out/vita/publications/publications.json" '"sections"'
+assert_contains "$WORK_DIR/build/out/vita/publications/publications.json" '"key": "example2024paper"'
 assert_file "$WORK_DIR/build/out/vita/publications/resume-pubs.pdf"
 assert_file "$WORK_DIR/build/out/vita/publications/resume-pubs.bib"
 assert_contains "$WORK_DIR/build/out/vita/index.html" "Example Person"
@@ -204,6 +207,7 @@ run_wrapper build fixtures/resume-publications-custom-sections.json --out build/
 assert_file "$WORK_DIR/build/out-custom-sections/vita/publications/index.html"
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'id="refereed"'
 assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/index.html" 'Journal Articles'
+assert_contains "$WORK_DIR/build/out-custom-sections/vita/publications/publications.json" '"title": "Journal Articles"'
 
 echo "==> Test 12: project visible URLs in PDF"
 run_wrapper build fixtures/resume-project-visible-urls.json --out build/out-project-visible-urls >/dev/null
