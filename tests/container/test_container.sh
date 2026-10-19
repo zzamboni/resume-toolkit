@@ -295,4 +295,32 @@ jq -e '
   exit 1
 }
 
+echo "==> Test 21: JSON/BibTeX only"
+run_wrapper build fixtures/resume.json fixtures/publications.bib --out build/out-select --no-html --no-pdf >/dev/null
+assert_file "$WORK_DIR/build/out-select/vita/publications/resume-pubs.json"
+assert_file "$WORK_DIR/build/out-select/vita/publications/resume-pubs.bib"
+[[ ! -e "$WORK_DIR/build/out-select/vita/index.html" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/index.html" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/resume.pdf" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/resume.typ" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/resume-pubs.pdf" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/resume-pubs.typ" ]]
+
+echo "==> Test 22: HTML/PDF without publications JSON"
+run_wrapper build fixtures/resume.json fixtures/publications.bib --out build/out-select --no-json >/dev/null
+assert_file "$WORK_DIR/build/out-select/vita/index.html"
+assert_file "$WORK_DIR/build/out-select/vita/publications/index.html"
+assert_file "$WORK_DIR/build/out-select/vita/resume.pdf"
+assert_file "$WORK_DIR/build/out-select/vita/publications/resume-pubs.pdf"
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/resume-pubs.json" ]]
+
+echo "==> Test 23: all formats disabled after previous build"
+run_wrapper build fixtures/resume.json fixtures/publications.bib --out build/out-select --no-json --no-html --no-pdf >/dev/null
+assert_file "$WORK_DIR/build/out-select/vita/publications/resume-pubs.bib"
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/resume-pubs.json" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/index.html" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/index.html" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/resume.pdf" ]]
+[[ ! -e "$WORK_DIR/build/out-select/vita/publications/resume-pubs.pdf" ]]
+
 echo "All container tests passed."
