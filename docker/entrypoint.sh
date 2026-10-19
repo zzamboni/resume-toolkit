@@ -9,7 +9,7 @@ export PATH="$VITA_TOOLKIT_ROOT/.venv/bin:$VITA_TOOLKIT_ROOT/node_modules/.bin:$
 usage() {
   cat <<'USAGE'
 Usage:
-  vita-pipeline [build|pipeline] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
+  vita-pipeline [build|pipeline] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--no-json] [--no-html] [--no-pdf]
   vita-pipeline fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token <token>]
   vita-pipeline update-logos <resume.json> [--overwrite] [--dry-run] [--token <token>]
   vita-pipeline update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
@@ -46,6 +46,9 @@ run_pipeline() {
   local watch=0
   local serve=0
   local no_fetch_logos=0
+  local no_json=0
+  local no_html=0
+  local no_pdf=0
   local resume=""
   local out=""
   local pubs_url=""
@@ -57,6 +60,9 @@ run_pipeline() {
       --watch) watch=1; shift ;;
       --serve) serve=1; watch=1; shift ;;
       --no-fetch-logos) no_fetch_logos=1; shift ;;
+      --no-json) no_json=1; shift ;;
+      --no-html) no_html=1; shift ;;
+      --no-pdf) no_pdf=1; shift ;;
       --out) out="$2"; shift 2 ;;
       --pubs-url) pubs_url="$2"; shift 2 ;;
       --cv-url) cv_url="$2"; shift 2 ;;
@@ -102,6 +108,10 @@ run_pipeline() {
   if [[ "$no_fetch_logos" == "1" ]]; then
     pipeline_args+=(--no-fetch-logos)
   fi
+
+  if [[ "$no_json" == "1" ]]; then pipeline_args+=(--no-json); fi
+  if [[ "$no_html" == "1" ]]; then pipeline_args+=(--no-html); fi
+  if [[ "$no_pdf" == "1" ]]; then pipeline_args+=(--no-pdf); fi
 
   local out_base="$out"
   if [[ -z "$out_base" ]]; then
