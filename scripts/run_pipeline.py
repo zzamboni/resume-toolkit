@@ -79,6 +79,9 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable automatic logo fetching when no source logo directory is found",
     )
+    parser.add_argument("--no-json", action="store_true", help="Skip publications JSON export (retain normalized pipeline input)")
+    parser.add_argument("--no-html", action="store_true", help="Skip CV and publications HTML output")
+    parser.add_argument("--no-pdf", action="store_true", help="Skip CV and publications PDFs and Typst sources")
     return parser.parse_args()
 
 
@@ -651,30 +654,33 @@ def main() -> int:
     profile_image_value = data.get("basics", {}).get("image") or ""
     profile_image = Path(profile_image_value) if profile_image_value else None
 
-    cv_html = out_vita / "index.html"
-    cv_html_hash = calc_hash(
-        f"FILE:{normalized_json}",
-        f"FILE:{profile_image}" if profile_image else "FILE:",
-        f"FILE:{toolkit_root / 'scripts' / 'render_cv.sh'}",
-        f"STR:cv_html_target={cv_html}",
-        "STR:cv_html_theme=jsonresume-theme-eventide",
-    )
-    cv_html_stamp = state_dir / "cv-html.sha"
-    if needs_rebuild(cv_html, cv_html_stamp, cv_html_hash):
-        print("→ Building CV HTML")
-        run_command(
-            [
-                str(toolkit_root / "scripts" / "render_cv.sh"),
-                "jsonresume-theme-eventide",
-                str(normalized_json),
-                str(cv_html),
-            ]
+    if not args.no_html:
+        cv_html = out_vita / "index.html"
+        cv_html_hash = calc_hash(
+            f"FILE:{normalized_json}",
+            f"FILE:{profile_image}" if profile_image else "FILE:",
+            f"FILE:{toolkit_root / 'scripts' / 'render_cv.sh'}",
+            f"STR:cv_html_target={cv_html}",
+            "STR:cv_html_theme=jsonresume-theme-eventide",
         )
-        mark_built(cv_html_stamp, cv_html_hash)
+        cv_html_stamp = state_dir / "cv-html.sha"
+        if needs_rebuild(cv_html, cv_html_stamp, cv_html_hash):
+            print("→ Building CV HTML")
+            run_command(
+                [
+                    str(toolkit_root / "scripts" / "render_cv.sh"),
+                    "jsonresume-theme-eventide",
+                    str(normalized_json),
+                    str(cv_html),
+                ]
+            )
+            mark_built(cv_html_stamp, cv_html_hash)
+        else:
+            print("→ CV HTML up to date")
+        inject_reload_if_needed(toolkit_root, cv_html)
     else:
-        print("→ CV HTML up to date")
-    inject_reload_if_needed(toolkit_root, cv_html)
-
+        (out_vita / "index.html").unlink(missing_ok=True)
+        (state_dir / "cv-html.sha").unlink(missing_ok=True)
     if bib_files:
         out_pubs.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory() as pubs_tmp_dir_raw:
@@ -689,6 +695,8 @@ def main() -> int:
             pubs_json = out_pubs / f"{pubs_base_name}.json"
 
             pubs_html_hash_args = [
+                f"STR:export_html={not args.no_html}",
+                f"STR:export_json={not args.no_json}",
                 f"FILE:{toolkit_root / 'scripts' / 'build_publications.py'}",
                 f"FILE:{toolkit_root / 'templates' / 'publications.html.j2'}",
                 f"FILE:{normalized_json}",
@@ -699,10 +707,10 @@ def main() -> int:
             pubs_html_hash_args.extend(f"FILE:{bib}" for bib in sorted_bibs)
             pubs_html_hash = calc_hash(*pubs_html_hash_args)
             pubs_html_stamp = state_dir / "pubs-html.sha"
-            if (needs_rebuild(pubs_html, pubs_html_stamp, pubs_html_hash)
-                or needs_rebuild(agg_bib, pubs_html_stamp, pubs_html_hash)
-                or needs_rebuild(pubs_json, pubs_html_stamp, pubs_html_hash)):
-                print("→ Building publications HTML + JSON + BibTeX")
+            if (needs_rebuild(agg_bib, pubs_html_stamp, pubs_html_hash)
+                or (not args.no_html and needs_rebuild(pubs_html, pubs_html_stamp, pubs_html_hash))
+                or (not args.no_json and needs_rebuild(pubs_json, pubs_html_stamp, pubs_html_hash))):
+                print("→ Building selected publications outputs + BibTeX")
                 env = os.environ.copy()
                 env.update(
                     {
@@ -713,6 +721,8 @@ def main() -> int:
                         "PUBS_BIB_FILENAME": pubs_bib_name,
                         "PUBS_RESUME_JSON": str(normalized_json),
                         "PUBS_LINKS": pubs_links_json,
+                        "PUBS_EXPORT_HTML": "0" if args.no_html else "1",
+                        "PUBS_EXPORT_JSON": "0" if args.no_json else "1",
                     }
                 )
                 run_command(
@@ -720,15 +730,20 @@ def main() -> int:
                     cwd=toolkit_root,
                     env=env,
                 )
-                inject_reload_if_needed(toolkit_root, pubs_html)
+                if not args.no_html:
+                    inject_reload_if_needed(toolkit_root, pubs_html)
                 mark_built(pubs_html_stamp, pubs_html_hash)
             else:
-                print("→ Publications HTML + JSON + BibTeX up to date")
+                print("→ Selected publications outputs + BibTeX up to date")
+            if args.no_html:
+                pubs_html.unlink(missing_ok=True)
+            if args.no_json:
+                pubs_json.unlink(missing_ok=True)
 
             if not agg_bib.is_file():
                 raise SystemExit(f"Aggregated bib not found: {agg_bib}")
 
-            if inline_publications_requested:
+            if inline_publications_requested and not args.no_pdf:
                 wrote_filtered_inline_bib = False
                 if full_standalone_list_enabled(data):
                     wrote_filtered_inline_bib = write_filtered_inline_bib(sorted_bibs, inline_bib_path, data)
@@ -736,95 +751,103 @@ def main() -> int:
                     shutil.copy2(agg_bib, inline_bib_path)
                 inline_bib_for_typst = inline_bib_name
 
-            pubs_typ = out_pubs / pubs_typ_name
-            run_command(
-                [
-                    sys.executable,
-                    str(toolkit_root / "scripts" / "render_typst_publications.py"),
-                    str(normalized_json),
-                    pubs_bib_name,
-                    str(pubs_typ),
-                    effective_pubs_url,
-                ]
-            )
-
-            pubs_pdf = out_pubs / pubs_pdf_name
-            pubs_pdf_hash = calc_hash(
-                f"FILE:{toolkit_root / 'scripts' / 'run_pipeline.py'}",
-                f"FILE:{toolkit_root / 'scripts' / 'render_typst_publications.py'}",
-                f"FILE:{normalized_json}",
-                f"FILE:{agg_bib}",
-                f"STR:resume_name={resume_name}",
-                f"STR:pubs_typ_name={pubs_typ_name}",
-                f"STR:pubs_pdf_name={pubs_pdf_name}",
-                f"STR:resume_name={resume_name}",
-                f"STR:pubs_url={effective_pubs_url}",
-            )
-            pubs_pdf_stamp = state_dir / "pubs-pdf.sha"
-            if needs_rebuild(pubs_pdf, pubs_pdf_stamp, pubs_pdf_hash):
-                print("→ Building publications PDF")
-                run_command(["typst", "compile", pubs_typ_name, pubs_pdf_name], cwd=out_pubs)
-                mark_built(pubs_pdf_stamp, pubs_pdf_hash)
+            if not args.no_pdf:
+                pubs_typ = out_pubs / pubs_typ_name
+                run_command(
+                    [
+                        sys.executable,
+                        str(toolkit_root / "scripts" / "render_typst_publications.py"),
+                        str(normalized_json),
+                        pubs_bib_name,
+                        str(pubs_typ),
+                        effective_pubs_url,
+                    ]
+                )
+    
+                pubs_pdf = out_pubs / pubs_pdf_name
+                pubs_pdf_hash = calc_hash(
+                    f"FILE:{toolkit_root / 'scripts' / 'run_pipeline.py'}",
+                    f"FILE:{toolkit_root / 'scripts' / 'render_typst_publications.py'}",
+                    f"FILE:{normalized_json}",
+                    f"FILE:{agg_bib}",
+                    f"STR:resume_name={resume_name}",
+                    f"STR:pubs_typ_name={pubs_typ_name}",
+                    f"STR:pubs_pdf_name={pubs_pdf_name}",
+                    f"STR:resume_name={resume_name}",
+                    f"STR:pubs_url={effective_pubs_url}",
+                )
+                pubs_pdf_stamp = state_dir / "pubs-pdf.sha"
+                if needs_rebuild(pubs_pdf, pubs_pdf_stamp, pubs_pdf_hash):
+                    print("→ Building publications PDF")
+                    run_command(["typst", "compile", pubs_typ_name, pubs_pdf_name], cwd=out_pubs)
+                    mark_built(pubs_pdf_stamp, pubs_pdf_hash)
+                else:
+                    print("→ Publications PDF up to date")
             else:
-                print("→ Publications PDF up to date")
+                (out_pubs / pubs_typ_name).unlink(missing_ok=True)
+                (out_pubs / pubs_pdf_name).unlink(missing_ok=True)
     else:
         shutil.rmtree(out_pubs, ignore_errors=True)
         inline_bib_path.unlink(missing_ok=True)
 
-    cv_typ = out_vita / cv_typ_name
-    cv_pdf = out_vita / cv_pdf_name
-    cv_typ_hash_args = [
-        f"FILE:{normalized_json}",
-        f"FILE:{toolkit_root / 'scripts' / 'render_typst_cv.py'}",
-        f"DIR:{out_vita / 'assets' / 'profile'}",
-        f"DIR:{toolkit_root / 'assets' / 'profile'}",
-        f"DIR:{assets_source_dir / 'logos'}",
-        f"STR:cv_typ_target={cv_typ}",
-        f"STR:inline_publications_requested={str(inline_publications_requested).lower()}",
-        f"STR:inline_bib_for_typst={inline_bib_for_typst}",
-        f"STR:cv_url={effective_cv_url}",
-    ]
-    if inline_bib_for_typst:
-        cv_typ_hash_args.append(f"FILE:{inline_bib_path}")
-    cv_typ_hash = calc_hash(*cv_typ_hash_args)
-    cv_typ_stamp = state_dir / "cv-typ.sha"
-    if needs_rebuild(cv_typ, cv_typ_stamp, cv_typ_hash):
-        print("→ Building Typst source")
-        env = os.environ.copy()
-        env.update(
-            {
-                "VITA_ASSETS_DIR": str(assets_source_dir),
-                "VITA_INLINE_PUBLICATIONS_BIB": inline_bib_for_typst,
-                "VITA_CV_URL": effective_cv_url,
-            }
+    if not args.no_pdf:
+        cv_typ = out_vita / cv_typ_name
+        cv_pdf = out_vita / cv_pdf_name
+        cv_typ_hash_args = [
+            f"FILE:{normalized_json}",
+            f"FILE:{toolkit_root / 'scripts' / 'render_typst_cv.py'}",
+            f"DIR:{out_vita / 'assets' / 'profile'}",
+            f"DIR:{toolkit_root / 'assets' / 'profile'}",
+            f"DIR:{assets_source_dir / 'logos'}",
+            f"STR:cv_typ_target={cv_typ}",
+            f"STR:inline_publications_requested={str(inline_publications_requested).lower()}",
+            f"STR:inline_bib_for_typst={inline_bib_for_typst}",
+            f"STR:cv_url={effective_cv_url}",
+        ]
+        if inline_bib_for_typst:
+            cv_typ_hash_args.append(f"FILE:{inline_bib_path}")
+        cv_typ_hash = calc_hash(*cv_typ_hash_args)
+        cv_typ_stamp = state_dir / "cv-typ.sha"
+        if needs_rebuild(cv_typ, cv_typ_stamp, cv_typ_hash):
+            print("→ Building Typst source")
+            env = os.environ.copy()
+            env.update(
+                {
+                    "VITA_ASSETS_DIR": str(assets_source_dir),
+                    "VITA_INLINE_PUBLICATIONS_BIB": inline_bib_for_typst,
+                    "VITA_CV_URL": effective_cv_url,
+                }
+            )
+            run_command(
+                [
+                    sys.executable,
+                    str(toolkit_root / "scripts" / "render_typst_cv.py"),
+                    str(normalized_json),
+                    str(cv_typ),
+                ],
+                env=env,
+            )
+            mark_built(cv_typ_stamp, cv_typ_hash)
+        else:
+            print("→ Typst source up to date")
+    
+        cv_pdf_hash = calc_hash(
+            f"FILE:{cv_typ}",
+            f"DIR:{out_vita / 'assets' / 'profile'}",
+            f"DIR:{out_vita / 'assets' / 'logos'}",
+            f"STR:cv_pdf_target={cv_pdf}",
         )
-        run_command(
-            [
-                sys.executable,
-                str(toolkit_root / "scripts" / "render_typst_cv.py"),
-                str(normalized_json),
-                str(cv_typ),
-            ],
-            env=env,
-        )
-        mark_built(cv_typ_stamp, cv_typ_hash)
+        cv_pdf_stamp = state_dir / "cv-pdf.sha"
+        if needs_rebuild(cv_pdf, cv_pdf_stamp, cv_pdf_hash):
+            print("→ Building CV PDF")
+            run_command(["typst", "compile", str(cv_typ), str(cv_pdf)])
+            mark_built(cv_pdf_stamp, cv_pdf_hash)
+        else:
+            print("→ CV PDF up to date")
     else:
-        print("→ Typst source up to date")
-
-    cv_pdf_hash = calc_hash(
-        f"FILE:{cv_typ}",
-        f"DIR:{out_vita / 'assets' / 'profile'}",
-        f"DIR:{out_vita / 'assets' / 'logos'}",
-        f"STR:cv_pdf_target={cv_pdf}",
-    )
-    cv_pdf_stamp = state_dir / "cv-pdf.sha"
-    if needs_rebuild(cv_pdf, cv_pdf_stamp, cv_pdf_hash):
-        print("→ Building CV PDF")
-        run_command(["typst", "compile", str(cv_typ), str(cv_pdf)])
-        mark_built(cv_pdf_stamp, cv_pdf_hash)
-    else:
-        print("→ CV PDF up to date")
-
+        (out_vita / cv_typ_name).unlink(missing_ok=True)
+        (out_vita / cv_pdf_name).unlink(missing_ok=True)
+        inline_bib_path.unlink(missing_ok=True)
     print(f"Done. Output in: {out_vita}")
     return 0
 
