@@ -183,7 +183,7 @@ change, or when the JSON output is missing.
 ``` sh
 $ build-resume.sh --help
 Usage:
-  build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
+  build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--no-json] [--no-html] [--no-pdf]
   build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] update-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
@@ -196,7 +196,7 @@ Usage:
 ### `build` (default)
 
 ```sh
-build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos]
+build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--no-json] [--no-html] [--no-pdf]
 ```
 
 These are equivalent:
@@ -214,6 +214,10 @@ Options:
 -   `--pull`: pull the configured Docker image before running and use the updated image if one is available
 -   `--watch`: rebuild on input changes
 -   `--serve`: start HTTP server (implies `--watch`)
+-   `--no-json`: disable publications JSON export (the pipeline retains its internal normalized JSON)
+-   `--no-html`: disable CV and publications HTML rendering
+-   `--no-pdf`: disable CV and publications PDF and Typst generation
+-   All three output formats remain enabled by default. Publications BibTeX is still produced for other outputs. Disabled files are removed when reusing an output directory.
 -   `--no-fetch-logos`: disable automatic logo fetching when `assets/logos/` is missing
 
 If no BibTeX files are provided on the command line, the pipeline can read them from a special entry in the `publications` section of your JSON resume:
