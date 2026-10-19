@@ -692,7 +692,8 @@ def main():
         if sections.get(s)
     ] if sectioning_enabled else []
 
-    write_publications_json(sections, section_order, section_titles)
+    if os.environ.get("PUBS_EXPORT_JSON", "1") != "0":
+        write_publications_json(sections, section_order, section_titles)
 
     selected_entries = [
         e for e in entries
@@ -705,6 +706,9 @@ def main():
         SELECTED_OUT_FILE.parent.mkdir(exist_ok=True)
         SELECTED_OUT_FILE.write_text(json.dumps(selected_payload, ensure_ascii=False, indent=2))
     
+    if os.environ.get("PUBS_EXPORT_HTML", "1") == "0":
+        return
+
     env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
     tpl = env.get_template("publications.html.j2")
 
