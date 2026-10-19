@@ -24,7 +24,7 @@ port_in_use() {
 usage() {
   cat <<'USAGE'
 Usage:
-  build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--token LOGODEV_TOKEN]
+  build-resume.sh [--pull] [build] <resume.json> [bibfiles...] [--out <dir>] [--pubs-url <url>] [--cv-url <url>] [--watch] [--serve] [--no-fetch-logos] [--no-json] [--no-html] [--no-pdf] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] fetch-logos <resume.json> [--overwrite] [--dry-run] [--update-json] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] update-logos <resume.json> [--overwrite] [--dry-run] [--token LOGODEV_TOKEN]
   build-resume.sh [--pull] update-certs <username> <resume.json> [--include-expired] [--include-non-cert-badges] [--sort <date_desc|date_asc|name>]
@@ -34,6 +34,7 @@ Usage:
 
 Examples:
   build-resume.sh --pull resume.json pubs.bib --watch --serve
+  build-resume.sh resume.json pubs.bib --no-html --no-pdf
   build-resume.sh fetch-logos resume.json --overwrite --token pk_XXXXXXXXXXXXXXX
   build-resume.sh update-logos resume.json --overwrite --token pk_XXXXXXXXXXXXXXX
   build-resume.sh update-certs zzamboni resume.json
