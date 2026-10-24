@@ -35,10 +35,16 @@ Additional functionality:
   The diagram above is automatically rendered from the source code below.
 
 ```mermaid
+---
+config:
+  layout: dagre
+  theme: default
+  look: classic
+---
 flowchart TD
       subgraph sources[CV sources]
           A[JSON Resume<br/>resume.json]
-          B["BibTeX files<br/>publications.bib ...<br/>(optional)"]
+          B["BibTeX files<br/>pubs1.bib ...<br/>(optional)"]
       end
       
       A --> C[resume-toolkit]
