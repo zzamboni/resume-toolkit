@@ -166,6 +166,30 @@ resumes:
 ./build-resume.sh samples/john-doe-brilliantcv/john-doe-brilliantcv.json --serve
 ```
 
+## Publishing the sample to GitHub Pages
+
+`.github/workflows/pages.yml` builds the John Doe Brilliant-CV sample using a
+Docker image built from the current checkout, including the pinned Eventide
+submodule. It publishes HTML, PDFs, bibliography and assets at
+<https://zzamboni.github.io/resume-toolkit/>. The `vita/` output directory is
+uploaded as the site root, so its relative links work under the project URL.
+PDF footer URLs use the base URL returned by GitHub Pages.
+
+One-time setup: in repository **Settings → Pages → Build and deployment**, set
+**Source** to **GitHub Actions** before the first deployment. The workflow uses
+the built-in `GITHUB_TOKEN`; no registry or Logo.dev secrets are needed.
+
+Pushes to `main` rebuild and deploy when the sample, workflow, or toolkit build
+dependencies change. Unrelated documentation changes do not trigger a build.
+Matching pull requests build and upload a Pages artifact without deploying.
+Use **Actions → Deploy sample to GitHub Pages → Run workflow** on `main` to
+rebuild manually, including after changing the Pages configuration. Manual runs
+on other branches only build. Docker Buildx caches use a separate `pages` scope.
+
+The build checks that the CV and publications HTML/PDF, profile image, BibTeX
+and publications JSON outputs are present before uploading. Generated files
+and pipeline state are not committed.
+
 ## Working with the Eventide theme
 
 The HTML theme lives in:
@@ -414,3 +438,4 @@ For changes to the build pipeline, Typst renderer, theme integration, or image:
 3. Check at least one real or bundled resume manually, including desktop/mobile HTML for visual changes.
 4. If the theme changed, include its submodule commit and refreshed root `package-lock.json`.
 5. If a pipeline stage gains inputs or options, update its incremental-build hash dependencies and relevant regression coverage.
+

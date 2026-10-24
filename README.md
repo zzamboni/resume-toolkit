@@ -16,6 +16,7 @@
 > 
 > - [`samples/example-resume/`](samples/example-resume): fully synthetic example which shows a variety of features.
 > - [`samples/john-doe-brilliantcv/`](samples/john-doe-brilliantcv): the sample resume from [Brilliant-CV](https://typst.app/universe/package/brilliant-cv) (the one produced when you run `typst init @preview/brilliant-cv`) converted to JSONresume format, to show the Typst rendering abilities (the resulting PDF is nearly identical).
+>   [Live HTML sample](https://zzamboni.github.io/resume-toolkit/) · [CV PDF](https://zzamboni.github.io/resume-toolkit/john-doe-brilliantcv.pdf) · [Publications](https://zzamboni.github.io/resume-toolkit/publications/)
 
 Convert from JSON Resume and BibTeX files into:
 -   Resume HTML, using the [jsonresume-theme-eventide](https://github.com/zzamboni/jsonresume-theme-eventide) theme;
@@ -716,3 +717,4 @@ That guide covers:
 - release workflow
 - theme/submodule update workflow
 - Typst package version management
+

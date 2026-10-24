@@ -1,0 +1,130 @@
+name: Deploy sample to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - samples/john-doe-brilliantcv/**
+      - .github/workflows/pages.yml
+      - .dockerignore
+      - Dockerfile
+      - build-resume.sh
+      - docker/**
+      - scripts/**
+      - templates/**
+      - fonts/**
+      - themes/jsonresume-theme-eventide
+      - themes/jsonresume-theme-eventide/**
+      - .gitmodules
+      - package.json
+      - package-lock.json
+      - requirements.txt
+      - runtime-versions.json
+      - typst-package-versions.json
+      - VERSION
+  pull_request:
+    paths:
+      - samples/john-doe-brilliantcv/**
+      - .github/workflows/pages.yml
+      - .dockerignore
+      - Dockerfile
+      - build-resume.sh
+      - docker/**
+      - scripts/**
+      - templates/**
+      - fonts/**
+      - themes/jsonresume-theme-eventide
+      - themes/jsonresume-theme-eventide/**
+      - .gitmodules
+      - package.json
+      - package-lock.json
+      - requirements.txt
+      - runtime-versions.json
+      - typst-package-versions.json
+      - VERSION
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.event_name == 'pull_request' && github.ref || 'deploy' }}
+  cancel-in-progress: false
+
+env:
+  VITA_PIPELINE_IMAGE: resume-toolkit:pages-${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Build this checkout rather than using the last published release image.
+      - name: Build toolkit image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: ${{ env.VITA_PIPELINE_IMAGE }}
+          build-args: PREWARM_CACHE=1
+          cache-from: type=gha,scope=pages
+          cache-to: type=gha,mode=max,scope=pages
+
+      - name: Configure GitHub Pages
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        id: pages
+        uses: actions/configure-pages@v6
+
+      - name: Build sample HTML and PDFs
+        env:
+          PAGES_BASE_URL: ${{ steps.pages.outputs.base_url || format('https://{0}.github.io/{1}', github.repository_owner, github.event.repository.name) }}
+        run: |
+          set -euo pipefail
+          ./build-resume.sh samples/john-doe-brilliantcv/john-doe-brilliantcv.json \
+            --out build/pages \
+            --cv-url "${PAGES_BASE_URL%/}/" \
+            --pubs-url "${PAGES_BASE_URL%/}/publications/" \
+            --no-fetch-logos
+
+      - name: Verify published outputs
+        run: |
+          set -euo pipefail
+          for file in \
+            index.html \
+            john-doe-brilliantcv.pdf \
+            assets/profile/avatar.png \
+            publications/index.html \
+            publications/john-doe-brilliantcv-pubs.pdf \
+            publications/john-doe-brilliantcv-pubs.bib \
+            publications/john-doe-brilliantcv-pubs.json; do
+            test -s "build/pages/vita/$file"
+          done
+
+      # Publish vita's contents directly, keeping PDF, asset and publications
+      # links relative to the Pages site root. Pipeline state stays outside it.
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/pages/vita
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy sample
+        id: deployment
+        uses: actions/deploy-pages@v5
