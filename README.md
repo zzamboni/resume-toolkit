@@ -33,7 +33,7 @@ Additional functionality:
 ---
 config:
   layout: dagre
-  theme: default
+  theme: redux-color
   look: classic
 ---
 flowchart TD
