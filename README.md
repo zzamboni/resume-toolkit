@@ -3,13 +3,14 @@
 [![Current resume-toolkit version](https://img.shields.io/github/v/tag/zzamboni/resume-toolkit?label=Version)](https://ghcr.io/zzamboni/resume-toolkit)
 [![GitHub Actions workflow status](https://img.shields.io/github/actions/workflow/status/zzamboni/resume-toolkit/dockerhub-image.yml)](https://github.com/zzamboni/resume-toolkit/actions)
 [![Eventide theme version](https://img.shields.io/npm/v/jsonresume-theme-eventide?label=Eventide%20theme)](https://github.com/zzamboni/jsonresume-theme-eventide)
+[![resume-toolkit](https://img.shields.io/badge/see%20also-hugo--jsonresume-blue)](https://github.com/zzamboni/hugo-jsonresume)
 
 `resume-toolkit` allows you to produce beautiful HTML and PDF versions from your [JSON Resume](https://jsonresume.org/) (and optionally, BibTeX) files.
 
 >[!TIP]
 > **Examples:**
 > 
-> You can see a live real example at <https://zzamboni.org/vita/>.
+> You can see a live real example at <https://zzamboni.org/vita/> (the HTML page is rendered by [hugo-jsonresume](https://github.com/zzamboni/hugo-jsonresume), the PDF by resume-toolkit)
 > 
 > You can find some further samples in the `samples/` directory:
 > 
@@ -35,8 +36,13 @@ Additional functionality:
 
 ```mermaid
 flowchart TD
-      A[JSON Resume<br/>resume.json] --> C[resume-toolkit]
-      B["BibTeX files<br/>publications.bib ...<br/>(optional)"] .-> C
+      subgraph sources[CV sources]
+          A[JSON Resume<br/>resume.json]
+          B["BibTeX files<br/>publications.bib ...<br/>(optional)"]
+      end
+      
+      A --> C[resume-toolkit]
+      B .-> C
       C -. update-* commands .-> A
       
       subgraph CV[CV outputs]
